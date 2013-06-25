@@ -2,16 +2,24 @@
 import bibledata
 from collections import defaultdict
 
-#To do:
-#Implement string parsing
+## To do ##
+#Move Passage.__init__ checks elsewhere
 #Make PassageCollection object to be list-like
+#__add__ should return Passage if second passage starts immediately after first passage
+
+## Long term ##
+#Implement string parsing
+
 
 
 class Passage:
     def __init__(self, book, start_chapter=None, start_verse=None, end_chapter=None, end_verse=None, translation="ESV"):
         """
-        Passage intialisation and checking. Missing information will be filled in where it can be safely assumed. Infeasible objects will raise InvalidPassageException.
-        book may be a name (e.g. "Genesis"), a standard abbreviation (e.g. "Gen") or an integer (i.e. Genesis = 1, Revelation = 66).
+        Intialise and check passage reference. Missing information is filled in where it can be
+        safely assumed. Infeasible passages will raise InvalidPassageException.
+        
+        'book' may be a name (e.g. "Genesis"), a standard abbreviation (e.g. "Gen") or an
+        integer (i.e. Genesis = 1, Revelation = 66).
         """
         self.bd = bd = bible_data(translation)
 
@@ -132,16 +140,14 @@ class Passage:
 
     def setint(self):
         """
-        Set integers self.start and self.end representing passage starting and endings in purely numeric form. Primarily useful for efficient database filtering of passages.
-        First two numerals are book (eg. Gen = 01 and Rev = 66). Next three numerals are chapter, and final three numerals are verse. Thus Gen 3:5 is encoded as 001003005.
+        Set integers self.start and self.end, in order to represent passage starting and endings in purely numeric form. Primarily useful for efficient database filtering of passages.
+        First two numerals are book number (eg. Gen = 01 and Rev = 66). Next three numerals are chapter, and final three numerals are verse. Thus Gen 3:5 is encoded as 001003005.
         """
         self.start = (self.book_n * 10**6) + (self.start_chapter * 10**3) + self.start_verse
         self.end   = (self.book_n * 10**6) + (self.end_chapter * 10**3)   + self.end_verse
         return
     def is_valid(self):
-        """
-        Return boolean for whether this Passage object is a valid reference or not.
-        """
+        """ Return boolean denoting whether this Passage object is a valid reference or not. """
         #Does book exist?
         if isinstance(self.book_n, int):
             if self.book_n > 66 or self.book_n < 1:
@@ -164,9 +170,7 @@ class Passage:
         #Everything checked; return True
         return True
     def number_verses(self):
-        """
-        Return number of verses in this passage
-        """
+        """ Return number of verses in this passage. """
         if not self.is_valid(): return 0
         if self.start_chapter == self.end_chapter:
             n = self.end_verse - self.start_verse + 1
@@ -186,17 +190,17 @@ class Passage:
                 if verse <= self.end_verse: n -= 1
             return n
     def proportion_of_book(self):
-        """ Return proportion of current book represented by this passage """
+        """ Return proportion of current book represented by this passage. """
         return len(self)/float(self.book_total_verses())
 
     def complete_book(self):
-        """ Returns True if this reference is for a whole book """
+        """ Return True if this reference is for a whole book. """
         return (self.start_chapter == self.start_verse == 1 and
                 self.end_chapter == self.bd.number_chapters[self.book_n] and
                 self.end_verse   == self.bd.last_verses[self.book_n, self.end_chapter])
     
     def complete_chapter(self):
-        """ Returns True if this reference is for a whole chapter """
+        """ Return True if this reference is for a whole chapter. """
         return (self.start_verse == 1 and
                 self.start_chapter == self.end_chapter and
                 self.end_verse == self.bd.last_verses[self.book_n, self.end_chapter])
@@ -204,10 +208,16 @@ class Passage:
     def truncate(self, number_verses=None, proportion_of_book=None):
         """
         Return truncated version of passage if longer than given restraints, or else return self.
-        For example, Passage('Gen',1).truncate(number_verses=150) will return Passgae('Gen',1,1,6,12).
+
+        Arguments:
+        number_verses -- Maximum number of verses that passage may be
+        proportion_of_book -- Maximum proportion of book that passage may be
+
+        For example:
+        >>> Passage('Gen').truncate(number_verses=150)
+        Passage(book=1, start_chapter=1, start_verse=1, end_chapter=6, end_verse=12)
+
         """
-        #First check if starting reference is valid:
-        if (self.book_n > 66 or self.book_n < 1) or (self.start_chapter < 1 or self.start_chapter > self.bd.number_chapters[self.book_n]) or (self.start_verse < 1 or self.start_verse > self.bd.last_verses[self.book_n, self.start_chapter]): return None
         #Check current length and length of limits
         current_length = len(self)
         limit = current_length
@@ -243,7 +253,12 @@ class Passage:
     def extend(self, number_verses=None, proportion_of_book=None):
         """
         Return extended version of passage if shorter than given restraints, or else return self.
-        For example, Passage('Gen',1,1).extend(proportion_of_book=0.5) will return Passage('Gen',1,1,27,38) --i.e. the first 50% of the verses in Genesis
+        Same arguments as used by self.truncate
+        
+        For example, returning the first 50% of the verses in Genesis:
+        >>> Passage('Gen',1,1).extend(proportion_of_book=0.5)
+        Passage(book=1, start_chapter=1, start_verse=1, end_chapter=27, end_verse=38)
+        
         """
         #First check if starting reference is valid:
         if (self.book_n > 66 or self.book_n < 1) or (self.start_chapter < 1 or self.start_chapter > self.bd.number_chapters[self.book_n]) or (self.start_verse < 1 or self.start_verse > self.bd.last_verses[self.book_n, self.start_chapter]): return None
@@ -264,79 +279,68 @@ class Passage:
             end_verse = self.bd.last_verses[self.book_n, end_chapter]
             return Passage(self.book_n, self.start_chapter, self.start_verse, end_chapter, end_verse).truncate(number_verses=limit)
     def book_total_verses(self):
-        """
-        Return total number of verses in current book
-        """
+        """ Return total number of verses in current book. """
         verses = 0
         for chapter in range(1,self.bd.number_chapters[self.book_n]+1):
             verses += self.bd.last_verses[self.book_n,chapter] - len(self.bd.missing_verses.get((self.book_n,chapter),[]))
         return verses
-    def book_name(self, abbreviated = False, spacer = " "):
-        """
-        Return book name. Primarily for internal usage.
-        """
+    def book_name(self, abbreviated = False):
+        """ Return full or abbreviated book name. """
         if abbreviated:
-            return self.bd.book_names[self.book_n][2] + spacer
+            return self.bd.book_names[self.book_n][2]
         else:
             if self.book_n == 19 and self.start_chapter == self.end_chapter:
-                return "Psalm" + spacer
+                return "Psalm"
             else:
-                return self.bd.book_names[self.book_n][1] + spacer
+                return self.bd.book_names[self.book_n][1]
     def reference_string(self, abbreviated = False, dash = "-"):
-        """
-        x.reference_string() <==> str(x)
-        Return string representation of Passage object. Primarily for internal usage.
-        """
+        """ Return string representation of Passage object. """
         if not self.is_valid(): return 'Invalid passage'
         if self.bd.number_chapters[self.book_n] == 1:
             if self.start_verse == self.end_verse:
-                return self.book_name(abbreviated)+ str(self.start_verse)
+                return self.book_name(abbreviated) + " " + str(self.start_verse)
             elif self.start_verse == 1 and self.end_verse == self.bd.last_verses[self.book_n, 1]:
-                return self.book_name(abbreviated,spacer="")
+                return self.book_name(abbreviated)
             else:
-                return self.book_name(abbreviated) + str(self.start_verse) + dash + str(self.end_verse)
+                return self.book_name(abbreviated) + " " + str(self.start_verse) + dash + str(self.end_verse)
         else:
             if self.start_chapter == self.end_chapter:
                 if self.start_verse == self.end_verse:
-                    return self.book_name(abbreviated) + str(self.start_chapter) + ":" + str(self.start_verse)
+                    return self.book_name(abbreviated) + " " + str(self.start_chapter) + ":" + str(self.start_verse)
                 elif self.start_verse == 1 and self.end_verse == self.bd.last_verses[self.book_n, self.start_chapter]:
-                    return self.book_name(abbreviated) + str(self.start_chapter)
+                    return self.book_name(abbreviated) + " " + str(self.start_chapter)
                 else:
-                    return self.book_name(abbreviated) + str(self.start_chapter) + ":" + str(self.start_verse) + dash + str(self.end_verse)
+                    return self.book_name(abbreviated) + " " + str(self.start_chapter) + ":" + str(self.start_verse) + dash + str(self.end_verse)
             else:
                 if self.start_verse == 1 and self.end_verse == self.bd.last_verses[self.book_n, self.end_chapter]:
                     if self.start_chapter == 1 and self.end_chapter == self.bd.number_chapters[self.book_n]:
-                        return self.book_name(abbreviated,spacer="")
+                        return self.book_name(abbreviated)
                     else:
-                        return self.book_name(abbreviated) + str(self.start_chapter) + dash + str(self.end_chapter)
+                        return self.book_name(abbreviated) + " " + str(self.start_chapter) + dash + str(self.end_chapter)
                 else:
-                    return self.book_name(abbreviated) + str(self.start_chapter) + ":" + str(self.start_verse) + dash + str(self.end_chapter) + ":" + str(self.end_verse)
+                    return self.book_name(abbreviated) + " " + str(self.start_chapter) + ":" + str(self.start_verse) + dash + str(self.end_chapter) + ":" + str(self.end_verse)
     def __str__(self):
         """
         x.__str__() <==> str(x)
-        Return passage string
+        Return passage string.
         """
         return self.reference_string()
     def __unicode__(self):
         """
         x.__unicode__() <==> unicode(x)
-        Return unicode version of passage string. Uses en-dash for ranges.
+        Return unicode version of passage string, using en-dash for ranges.
         """
         return unicode(self.reference_string(dash=u"–"))
     def abbr(self):
-        """
-        Return abbreviated passage string
-        """
+        """ Return abbreviated passage string """
         return self.reference_string(abbreviated=True)
     def uabbr(self):
-        """
-        Return unicode-type abbreviated passage string. Uses en-dash for ranges.
-        """
+        """ Return unicode-type abbreviated passage string, using en-dash for ranges. """
         return unicode(self.reference_string(abbreviated=True, dash=u"–"))
     def __len__(self):
         """
         x.__len__() <==> len(x)
-        Return number of verses in passage
+        Return number of verses in passage.
         """
         return int(self.number_verses())
     def __repr__(self):
@@ -345,9 +349,7 @@ class Passage:
         """
         return "Passage(book="+repr(self.book_n)+", start_chapter="+repr(self.start_chapter)+", start_verse="+repr(self.start_verse)+", end_chapter="+repr(self.end_chapter)+", end_verse="+repr(self.end_verse)+")"
     def __cmp__(self, other):
-        """
-        Object sorting function. Sorting is based on start chapter/verse.
-        """
+        """ Object sorting function. Sorting is based on start chapter/verse. """
         return cmp(self.start, other.start)
     def __eq__(self,other):
         """
@@ -362,7 +364,7 @@ class Passage:
     def __ne__(self,other):
         """
         x.__ne__(y) <==> x != y
-        Inequality checking
+        Inequality checking.
         """
         return not self.__eq__(other)
     def __add__(self,other):
@@ -433,12 +435,12 @@ class PassageCollection:
                         parts.append(str(p.start_verse))
                     else:
                         parts.append(str(p.start_verse) + dash + str(p.end_verse))
-                group_strings.append(group[0].book_name(abbreviated) + ", ".join(parts))
+                group_strings.append(group[0].book_name(abbreviated) + " " + ", ".join(parts))
             else:
                 #Multi-chapter-book group
                 if (len(group) == 1 and group[0].complete_book() == 1.0):
                     #Special case where there is only one reference in bunch, and that reference is for a whole book.
-                    group_strings.append(group[0].book_name(abbreviated, spacer=""))
+                    group_strings.append(group[0].book_name(abbreviated))
                 else:
                     #For readability and simplicity, this part of the algorithm is within the GroupBunch class
                     bunched = GroupBunch()
@@ -599,3 +601,7 @@ def bible_data(translation):
     else:
         return bibledata.esv
 
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
