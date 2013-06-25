@@ -498,7 +498,7 @@ def check_reference(book_n, start_chapter, start_verse, end_chapter, end_verse, 
 
     #Require that numbers are not negative.
     if (sc and start_chapter < 1) or (sv and start_verse < 1) or (ec and end_chapter < 1) or (ev and end_verse < 1):
-        raise InvalidPassageException()
+        raise InvalidPassageException("Reference cannot include negative numbers")
 
     #Now fill out missing information.
 
@@ -510,13 +510,16 @@ def check_reference(book_n, start_chapter, start_verse, end_chapter, end_verse, 
         return (start_chapter, start_verse, end_chapter, end_verse)
 
     if bd.number_chapters[book_n] == 1:
-        #Single-chapter books
+        #Checks for single-chapter books
+        
         if not sc and not sv:
-            #No start information at all
-            start_chapter = start_verse = 1; sc = sv = True
+            #No start information at all; assume 1
+            start_chapter = start_verse = 1
+            sc = sv = True
+
         if sv and ev and (not sc or start_chapter == 1) and (not ec or end_chapter == 1):
-            #This includes the case where everything is provided and everything is fine
-            #and the case where chapters haven't been provided
+            #Verse range provided properly; start or end chapters either
+            #correct (i.e., 1) or missing
             start_chapter = end_chapter = 1
         elif sc and ec and not sv and not ev:
             #Chapter range provided, when it should have been verse range (useful for parsers)
@@ -524,38 +527,58 @@ def check_reference(book_n, start_chapter, start_verse, end_chapter, end_verse, 
             end_verse = end_chapter
             start_chapter = end_chapter = 1
         elif sc and not ec and not ev:
+            #No end chapter or verse provided
             if sv:
-                #This allows you to write, for example, Passage('Phm',2,1)
+                #Start chapter and start verse have been provided. Interpret this as a verse *range*.
+                #That is, Passage('Phm',3,6) will be interpreted as Phm 1:3-6
                 end_verse = start_verse
+                start_verse = start_chapter
+                start_chapter = end_chapter = 1
             else:
-                #This allows you to write, for example, Passage('Phm',2)
-                end_verse = start_chapter
-            start_verse = start_chapter
-            start_chapter = end_chapter = 1
+                #Only start chapter has been provided, but because this is a single-chapter book,
+                #this is equivalent to a single-verse reference
+                end_verse = start_verse = start_chapter
+                start_chapter = end_chapter = 1
         elif sv and not sc and not ec and not ev:
-            #Only start verse entered. This allows you to quickly and un-ambiguously enter a single-verse reference into a text-box form
+            #Only start verse entered
             end_verse = start_verse
             start_chapter = end_chapter = 1
         else:
             raise InvalidPassageException()
+        
     else:
-        #Multi-chapter books
+        #Checks for multi-chapter books. There are fewer valid ways to enter these references than for single-chapter books!
+
+        #If start chapter or start_verse are missing, assume 1
         if not sc: start_chapter = 1
         if not sv: start_verse = 1
-        if not ec: end_chapter = start_chapter
+
+        #If end chapter is missing, we must assume it is the same as the start chapter (which hopefully is not missing)
+        if not ec:
+            end_chapter = start_chapter
+
+        #If end verse is missing, we need to do some more digging
         if not ev:
             if start_chapter == end_chapter:
+                #Single-chapter reference
                 if sv:
+                    #Start verse was provided; assume reference is a single-verse reference
                     end_verse = start_verse
                 else:
-                    end_verse = bd.last_verses.get((book_n, end_chapter),1) #if chapter doesn't exist, passage won't be valid anyway
+                    #Neither start verse or end verse were provided. start_verse has already
+                    #been set to 1 above; set end_verse to be the last verse of the chapter.
+                    end_verse = bd.last_verses.get((book_n, end_chapter),1)
+                    #NB: if chapter doesn't exist, passage won't be valid anyway
             else:
+                #Multi-chapter reference
+                #Start by truncating end_chapter if necessary
                 if end_chapter > bd.number_chapters[book_n]:
                     end_chapter = bd.number_chapters[book_n]
                     #NB: if start chapter doesn't exist, passage won't be valid anyway
+                #Assume end_verse is equal to the last verse of end_chapter
                 end_verse = bd.last_verses[book_n, end_chapter]
 
-    #Checking that end chapter and end verse both exist; truncating if necessary
+    #Check that end chapter and end verse are both valid; truncate if necessary
     if end_chapter > bd.number_chapters[book_n]:
         end_chapter = bd.number_chapters[book_n]
         end_verse = bd.last_verses[book_n, end_chapter]
@@ -571,8 +594,9 @@ def check_reference(book_n, start_chapter, start_verse, end_chapter, end_verse, 
         raise InvalidPassageException()
     if bd.number_chapters[book_n] == 1 and (start_chapter > 1 or end_chapter > 1): raise InvalidPassageException()
 
-    #Check that start and begining verses both exist; shorten if not
+    #Check that neither the start or end verses are "missing verses"; shorten if not
     if start_chapter == end_chapter:
+        #Single-chapter reference
         missing = bd.missing_verses.get((book_n, start_chapter),[])
         while start_verse in missing:
             if start_verse < end_verse:
