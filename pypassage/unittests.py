@@ -91,58 +91,63 @@ class TestPassage(unittest.TestCase):
     def test_unfixable(self):
         try:
             P('Ben',1,1,2,1)
-            self.fail("P('Ben',1,1,2,1) should have raise exception")
+            self.fail("P('Ben',1,1,2,1) should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Gen',2,1,1,1) #end_chapter is before start_chapter
-            self.fail("P('Gen',2,1,1,1) should have raise exception")
+            self.fail("P('Gen',2,1,1,1) should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Gen',1,5,1,1) #end_verse is before start_verse
-            self.fail("P('Gen',1,5,1,1) should have raise exception")
+            self.fail("P('Gen',1,5,1,1) should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Gen',51) #start_chapter is past end of book
-            self.fail("P('Gen',51) should have raise exception")
+            self.fail("P('Gen',51) should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Gen',0,1,2,1) #zero (or negative) chapter or verse
-            self.fail("P('Gen',0,1,2,1) should have raise exception")
+            self.fail("P('Gen',0,1,2,1) should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Gen',1,32) #single verse that doesn't exist
-            self.fail("P('Gen',1,32) should have raise exception")
+            self.fail("P('Gen',1,32) should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Gen',1,32,2,1) #start_verse is greater than last verse for that chapter
-            self.fail("P('Gen',1,32,2,1) should have raise exception")
+            self.fail("P('Gen',1,32,2,1) should have raised exception")
         except InvalidPassageException: pass
     def test_unfixable_single_chapter(self):
         try:
             #This one in particular could be interpretable. But for code/API simplicity and comprehensibility, it has been ignored.
             P('Phm',start_chapter=1,start_verse=1,end_chapter=7)
-            self.fail("Should have raise exception")
+            self.fail("should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Phm',start_verse=5,end_chapter=7,end_verse=9)
-            self.fail("Should have raise exception")
+            self.fail("should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Phm',start_chapter=3,end_verse=9)
-            self.fail("Should have raise exception")
+            self.fail("should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Phm',start_verse=5,end_chapter=7)
-            self.fail("Should have raise exception")
+            self.fail("should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Phm',end_chapter=7,end_verse=9)
-            self.fail("Should have raise exception")
+            self.fail("should have raised exception")
         except InvalidPassageException: pass
         try:
             P('Phm',end_chapter=7)
-            self.fail("Should have raise exception")
+            self.fail("should have raised exception")
         except InvalidPassageException: pass
+        try:
+            P(book='PHM', start_chapter=6, start_verse=3)
+            self.fail("should have raised exception")
+        except InvalidPassageException: pass
+
      
     #Testing passage strings
     def test_passage_strings(self):
@@ -179,7 +184,7 @@ class TestPassage(unittest.TestCase):
     def test_verse_that_doesnt_exist(self):
         try:
             P(book='MAT', start_chapter=12, start_verse=47, end_chapter=12, end_verse=47)
-            self.fail("Single verse-reference that doesn't exist should have raise exception")
+            self.fail("Single verse-reference that doesn't exist should have raised exception")
         except InvalidPassageException: pass
     def test_automatic_shortening(self):
         self.assertEqual(P(book='MAT', start_chapter=12, start_verse=47, end_chapter=17, end_verse=21),
