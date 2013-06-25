@@ -23,119 +23,21 @@ class Passage:
         """
         self.bd = bd = bible_data(translation)
 
-        #Set self values and check book
-        self.start_chapter = start_chapter
-        self.start_verse = start_verse
-        self.end_chapter = end_chapter
-        self.end_verse = end_verse
-        if isinstance(book, int) or isinstance(book, long): #Book has been provided as an integer (1-66)
+        #Check book
+        if isinstance(book, int) or isinstance(book, long):
+            #Book has been provided as an integer (1-66)
             self.book_n = int(book)
             if self.book_n > 66 or self.book_n < 1:
                 raise InvalidPassageException()
-        else: #Assume book has been provided as a string
+        else:
+            #Assume book has been provided as a string
             self.book_n = bd.book_numbers.get(str(book).upper(),None)
             if self.book_n == None:
                 raise InvalidPassageException()
 
-        #Check which numbers have been provided.
-        sc = sv = ec = ev = True
-        if start_chapter == None: sc = False
-        if start_verse == None: sv = False
-        if end_chapter == None: ec = False
-        if end_verse == None: ev = False
-        #Require that numbers are not negative.
-        if (sc and start_chapter < 1) or (sv and start_verse < 1) or (ec and end_chapter < 1) or (ev and end_verse < 1): raise InvalidPassageException()
+        #Set self values and check book
+        (self.start_chapter, self.start_verse, self.end_chapter, self.end_verse) = check_reference(self.book_n, start_chapter, start_verse, end_chapter, end_verse, bd)
 
-        #Now fill out missing information.
-
-        #No chapter/verse information at all: Assume reference was for full book
-        if not sc and not sv and not ec and not ev:
-            self.start_chapter = self.start_verse = 1
-            self.end_chapter = bd.number_chapters[self.book_n]
-            self.end_verse = bd.last_verses[self.book_n, self.end_chapter]
-            return self.setint()
-
-        if bd.number_chapters[self.book_n] == 1:
-            #Single-chapter books
-            if not sc and not sv:
-                #No start information at all
-                self.start_chapter = self.start_verse = 1; sc = sv = True
-            if sv and ev and (not sc or self.start_chapter == 1) and (not ec or self.end_chapter == 1):
-                #This includes the case where everything is provided and everything is fine
-                #and the case where chapters haven't been provided
-                self.start_chapter = self.end_chapter = 1
-            elif sc and ec and not sv and not ev:
-                #Chapter range provided, when it should have been verse range (useful for parsers)
-                self.start_verse = self.start_chapter
-                self.end_verse = self.end_chapter
-                self.start_chapter = self.end_chapter = 1
-            elif sc and not ec and not ev:
-                if sv:
-                    #This allows you to write, for example, Passage('Phm',2,1)
-                    self.end_verse = self.start_verse
-                else:
-                    #This allows you to write, for example, Passage('Phm',2)
-                    self.end_verse = self.start_chapter
-                self.start_verse = self.start_chapter
-                self.start_chapter = self.end_chapter = 1
-            elif sv and not sc and not ec and not ev:
-                #Only start verse entered. This allows you to quickly and un-ambiguously enter a single-verse reference into a text-box form
-                self.end_verse = self.start_verse
-                self.start_chapter = self.end_chapter = 1
-            else:
-                raise InvalidPassageException()
-        else:
-            #Multi-chapter books
-            if not sc: self.start_chapter = 1
-            if not sv: self.start_verse = 1
-            if not ec: self.end_chapter = self.start_chapter
-            if not ev:
-                if self.start_chapter == self.end_chapter:
-                    if sv:
-                        self.end_verse = self.start_verse
-                    else:
-                        self.end_verse = bd.last_verses.get((self.book_n, self.end_chapter),1) #if chapter doesn't exist, passage won't be valid anyway
-                else:
-                    if self.end_chapter > bd.number_chapters[self.book_n]:
-                        self.end_chapter = bd.number_chapters[self.book_n]
-                        #NB: if start chapter doesn't exist, passage won't be valid anyway
-                    self.end_verse = bd.last_verses[self.book_n, self.end_chapter]
-
-        #Checking that end chapter and end verse both exist; truncating if necessary
-        if self.end_chapter > bd.number_chapters[self.book_n]:
-            self.end_chapter = bd.number_chapters[self.book_n]
-            self.end_verse = bd.last_verses[self.book_n, self.end_chapter]
-        elif self.end_verse > bd.last_verses[self.book_n, self.end_chapter]:
-            self.end_verse = bd.last_verses[self.book_n, self.end_chapter]
-
-        #Raise exception now if passage is still invalid
-        if self.start_chapter > bd.number_chapters[self.book_n]: raise InvalidPassageException()
-        if self.start_verse > bd.last_verses[self.book_n,self.start_chapter]: raise InvalidPassageException()
-        if self.start_chapter > self.end_chapter:
-            raise InvalidPassageException()
-        elif self.start_chapter == self.end_chapter and self.start_verse > self.end_verse:
-             raise InvalidPassageException()
-        if bd.number_chapters[self.book_n] == 1 and (self.start_chapter > 1 or self.end_chapter > 1): raise InvalidPassageException()
-
-        #Check that start and begining verses both exist; shorten if not
-        if self.start_chapter == self.end_chapter:
-            missing = bd.missing_verses.get((self.book_n, self.start_chapter),[])
-            while self.start_verse in missing:
-                if self.start_verse < self.end_verse:
-                    self.start_verse += 1
-                else: raise InvalidPassageException()
-            while self.end_verse in missing:
-                self.end_verse -= 1
-        else:
-            missing_start = bd.missing_verses.get((self.book_n, self.start_chapter),[])
-            while self.start_verse in missing_start:
-                self.start_verse += 1
-            missing_end = bd.missing_verses.get((self.book_n, self.end_chapter),[])
-            while self.end_verse in missing_end:
-                self.end_verse -= 1
-            if self.end_verse < 1:
-                self.end_chapter -= 1
-                self.end_verse = bd.last_verses[self.book_n, self.end_chapter]
         return self.setint()
 
     def setint(self):
@@ -583,6 +485,110 @@ class GroupBunch:
         else:
             book = bibledata.book_names[self.book_n][1]
         return book + " " + ", ".join(textual_bunches)
+
+
+def check_reference(book_n, start_chapter, start_verse, end_chapter, end_verse, bd):
+        #Check which numbers have been provided.
+        sc = sv = ec = ev = True
+        if start_chapter == None: sc = False
+        if start_verse == None: sv = False
+        if end_chapter == None: ec = False
+        if end_verse == None: ev = False
+        #Require that numbers are not negative.
+        if (sc and start_chapter < 1) or (sv and start_verse < 1) or (ec and end_chapter < 1) or (ev and end_verse < 1): raise InvalidPassageException()
+
+        #Now fill out missing information.
+
+        #No chapter/verse information at all: Assume reference was for full book
+        if not sc and not sv and not ec and not ev:
+            start_chapter = start_verse = 1
+            end_chapter = bd.number_chapters[book_n]
+            end_verse = bd.last_verses[book_n, end_chapter]
+            return (start_chapter, start_verse, end_chapter, end_verse)
+
+        if bd.number_chapters[book_n] == 1:
+            #Single-chapter books
+            if not sc and not sv:
+                #No start information at all
+                start_chapter = start_verse = 1; sc = sv = True
+            if sv and ev and (not sc or start_chapter == 1) and (not ec or end_chapter == 1):
+                #This includes the case where everything is provided and everything is fine
+                #and the case where chapters haven't been provided
+                start_chapter = end_chapter = 1
+            elif sc and ec and not sv and not ev:
+                #Chapter range provided, when it should have been verse range (useful for parsers)
+                start_verse = start_chapter
+                end_verse = end_chapter
+                start_chapter = end_chapter = 1
+            elif sc and not ec and not ev:
+                if sv:
+                    #This allows you to write, for example, Passage('Phm',2,1)
+                    end_verse = start_verse
+                else:
+                    #This allows you to write, for example, Passage('Phm',2)
+                    end_verse = start_chapter
+                start_verse = start_chapter
+                start_chapter = end_chapter = 1
+            elif sv and not sc and not ec and not ev:
+                #Only start verse entered. This allows you to quickly and un-ambiguously enter a single-verse reference into a text-box form
+                end_verse = start_verse
+                start_chapter = end_chapter = 1
+            else:
+                raise InvalidPassageException()
+        else:
+            #Multi-chapter books
+            if not sc: start_chapter = 1
+            if not sv: start_verse = 1
+            if not ec: end_chapter = start_chapter
+            if not ev:
+                if start_chapter == end_chapter:
+                    if sv:
+                        end_verse = start_verse
+                    else:
+                        end_verse = bd.last_verses.get((book_n, end_chapter),1) #if chapter doesn't exist, passage won't be valid anyway
+                else:
+                    if end_chapter > bd.number_chapters[book_n]:
+                        end_chapter = bd.number_chapters[book_n]
+                        #NB: if start chapter doesn't exist, passage won't be valid anyway
+                    end_verse = bd.last_verses[book_n, end_chapter]
+
+        #Checking that end chapter and end verse both exist; truncating if necessary
+        if end_chapter > bd.number_chapters[book_n]:
+            end_chapter = bd.number_chapters[book_n]
+            end_verse = bd.last_verses[book_n, end_chapter]
+        elif end_verse > bd.last_verses[book_n, end_chapter]:
+            end_verse = bd.last_verses[book_n, end_chapter]
+
+        #Raise exception now if passage is still invalid
+        if start_chapter > bd.number_chapters[book_n]: raise InvalidPassageException()
+        if start_verse > bd.last_verses[book_n,start_chapter]: raise InvalidPassageException()
+        if start_chapter > end_chapter:
+            raise InvalidPassageException()
+        elif start_chapter == end_chapter and start_verse > end_verse:
+             raise InvalidPassageException()
+        if bd.number_chapters[book_n] == 1 and (start_chapter > 1 or end_chapter > 1): raise InvalidPassageException()
+
+        #Check that start and begining verses both exist; shorten if not
+        if start_chapter == end_chapter:
+            missing = bd.missing_verses.get((book_n, start_chapter),[])
+            while start_verse in missing:
+                if start_verse < end_verse:
+                    start_verse += 1
+                else: raise InvalidPassageException()
+            while end_verse in missing:
+                end_verse -= 1
+        else:
+            missing_start = bd.missing_verses.get((book_n, start_chapter),[])
+            while start_verse in missing_start:
+                start_verse += 1
+            missing_end = bd.missing_verses.get((book_n, end_chapter),[])
+            while end_verse in missing_end:
+                end_verse -= 1
+            if end_verse < 1:
+                end_chapter -= 1
+                end_verse = bd.last_verses[book_n, end_chapter]
+        
+        return (start_chapter, start_verse, end_chapter, end_verse)
 
 
 class InvalidPassageException(Exception):
