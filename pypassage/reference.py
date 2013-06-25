@@ -3,7 +3,6 @@ import bibledata
 from collections import defaultdict
 
 ## To do ##
-#Move Passage.__init__ checks elsewhere
 #Make PassageCollection object to be list-like
 #__add__ should return Passage if second passage starts immediately after first passage
 
@@ -42,14 +41,20 @@ class Passage:
 
     def setint(self):
         """
-        Set integers self.start and self.end, in order to represent passage starting and endings in purely numeric form. Primarily useful for efficient database filtering of passages.
-        First two numerals are book number (eg. Gen = 01 and Rev = 66). Next three numerals are chapter, and final three numerals are verse. Thus Gen 3:5 is encoded as 001003005.
+        Set integers self.start and self.end, in order to represent passage starting and endings in purely
+        numeric form. Primarily useful for efficient database filtering of passages.
+        First two numerals are book number (eg. Gen = 01 and Rev = 66). Next three numerals are chapter, and
+        final three numerals are verse. Thus Gen 3:5 is encoded as 001003005.
         """
         self.start = (self.book_n * 10**6) + (self.start_chapter * 10**3) + self.start_verse
         self.end   = (self.book_n * 10**6) + (self.end_chapter * 10**3)   + self.end_verse
         return
+    
     def is_valid(self):
-        """ Return boolean denoting whether this Passage object is a valid reference or not. """
+        """
+        Return boolean denoting whether this Passage object is a valid reference or not. While object always
+        ensures passage is valid when it is instantiated, it may have been made invalid at a later time.
+        """
         #Does book exist?
         if isinstance(self.book_n, int):
             if self.book_n > 66 or self.book_n < 1:
@@ -71,6 +76,7 @@ class Passage:
         if self.end_verse in self.bd.missing_verses.get((self.book_n, self.end_chapter),[]): return False #Making implicit assumption that there are no two consecutive missing verses.
         #Everything checked; return True
         return True
+    
     def number_verses(self):
         """ Return number of verses in this passage. """
         if not self.is_valid(): return 0
@@ -91,6 +97,7 @@ class Passage:
             for verse in missing_end:
                 if verse <= self.end_verse: n -= 1
             return n
+        
     def proportion_of_book(self):
         """ Return proportion of current book represented by this passage. """
         return len(self)/float(self.book_total_verses())
@@ -152,6 +159,7 @@ class Passage:
                     n += len(valid_verses)
             #If we've got through the loop and haven't returned a Passage object, something's gone amiss.
             raise Exception("Got to end_verse and still hadn't reached current_length!")
+        
     def extend(self, number_verses=None, proportion_of_book=None):
         """
         Return extended version of passage if shorter than given restraints, or else return self.
@@ -180,12 +188,14 @@ class Passage:
             end_chapter = self.bd.number_chapters[self.book_n]
             end_verse = self.bd.last_verses[self.book_n, end_chapter]
             return Passage(self.book_n, self.start_chapter, self.start_verse, end_chapter, end_verse).truncate(number_verses=limit)
+        
     def book_total_verses(self):
         """ Return total number of verses in current book. """
         verses = 0
         for chapter in range(1,self.bd.number_chapters[self.book_n]+1):
             verses += self.bd.last_verses[self.book_n,chapter] - len(self.bd.missing_verses.get((self.book_n,chapter),[]))
         return verses
+    
     def book_name(self, abbreviated = False):
         """ Return full or abbreviated book name. """
         if abbreviated:
@@ -195,6 +205,7 @@ class Passage:
                 return "Psalm"
             else:
                 return self.bd.book_names[self.book_n][1]
+            
     def reference_string(self, abbreviated = False, dash = "-"):
         """ Return string representation of Passage object. """
         if not self.is_valid(): return 'Invalid passage'
@@ -221,38 +232,46 @@ class Passage:
                         return self.book_name(abbreviated) + " " + str(self.start_chapter) + dash + str(self.end_chapter)
                 else:
                     return self.book_name(abbreviated) + " " + str(self.start_chapter) + ":" + str(self.start_verse) + dash + str(self.end_chapter) + ":" + str(self.end_verse)
+                
     def __str__(self):
         """
         x.__str__() <==> str(x)
         Return passage string.
         """
         return self.reference_string()
+    
     def __unicode__(self):
         """
         x.__unicode__() <==> unicode(x)
         Return unicode version of passage string, using en-dash for ranges.
         """
         return unicode(self.reference_string(dash=u"–"))
+    
     def abbr(self):
         """ Return abbreviated passage string """
         return self.reference_string(abbreviated=True)
+    
     def uabbr(self):
         """ Return unicode-type abbreviated passage string, using en-dash for ranges. """
         return unicode(self.reference_string(abbreviated=True, dash=u"–"))
+    
     def __len__(self):
         """
         x.__len__() <==> len(x)
         Return number of verses in passage.
         """
         return int(self.number_verses())
+    
     def __repr__(self):
         """
         x.__repr__() <==> x
         """
         return "Passage(book="+repr(self.book_n)+", start_chapter="+repr(self.start_chapter)+", start_verse="+repr(self.start_verse)+", end_chapter="+repr(self.end_chapter)+", end_verse="+repr(self.end_verse)+")"
+    
     def __cmp__(self, other):
         """ Object sorting function. Sorting is based on start chapter/verse. """
         return cmp(self.start, other.start)
+    
     def __eq__(self,other):
         """
         x.__eq__(y) <==> x == y
@@ -263,12 +282,14 @@ class Passage:
             return True
         else:
             return False
+        
     def __ne__(self,other):
         """
         x.__ne__(y) <==> x != y
         Inequality checking.
         """
         return not self.__eq__(other)
+    
     def __add__(self,other):
         """
         x.__add__(y) <==> x + y
@@ -404,7 +425,8 @@ class PassageCollection:
 
 class GroupBunch:
     """
-    Internal-use class for creating strings for 'bunches' of passages that are in the same book, and where that book is a multi-chapter book.
+    Internal-use class for creating strings for 'bunches' of passages that are in the same book,
+    and where that book is a multi-chapter book.
     """
     def __init__(self):
         self.bunches = defaultdict(lambda: []) #lists of reference objects, indexed by order
