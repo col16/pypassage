@@ -34,9 +34,14 @@ class Passage:
             if self.book_n == None:
                 raise InvalidPassageException()
 
-        #Set self values and check book
-        (self.start_chapter, self.start_verse, self.end_chapter, self.end_verse) = check_reference(self.book_n, start_chapter, start_verse, end_chapter, end_verse, bd)
+        #Check and normalise numeric reference inputs
+        (self.start_chapter, self.start_verse, self.end_chapter, self.end_verse) = check_reference(self.book_n, bd, start_chapter, start_verse, end_chapter, end_verse)
 
+        #Raise exception now if passage is still invalid
+        if not self.is_valid():
+            raise InvalidPassageException()
+
+        #Finish by setting self.start and self.end integers
         return self.setint()
 
     def setint(self):
@@ -52,8 +57,8 @@ class Passage:
     
     def is_valid(self):
         """
-        Return boolean denoting whether this Passage object is a valid reference or not. While object always
-        ensures passage is valid when it is instantiated, it may have been made invalid at a later time.
+        Return boolean denoting whether this Passage object is a valid reference or not. Note that while object
+        always ensures passage is valid when it is instantiated, it may have been made invalid at a later time.
         """
         #Does book exist?
         if isinstance(self.book_n, int):
@@ -61,7 +66,7 @@ class Passage:
                 return False
         else: return False
         #Are start_chapter, start_verse, end_chapter, and end_verse all integers?
-        #if not isinstance(self.start_chapter,int) or not isinstance(self.start_verse,int) or not isinstance(self.end_chapter,int) or not isinstance(self.end_verse,int): return False
+        if not isinstance(self.start_chapter,int) or not isinstance(self.start_verse,int) or not isinstance(self.end_chapter,int) or not isinstance(self.end_verse,int): return False
         #Is end after start?
         if self.start_chapter > self.end_chapter:
             return False
@@ -73,7 +78,7 @@ class Passage:
         if self.bd.last_verses[self.book_n, self.start_chapter] < self.start_verse: return False
         #Are either start or end verses missing verses?
         if self.start_verse in self.bd.missing_verses.get((self.book_n, self.start_chapter),[]): return False
-        if self.end_verse in self.bd.missing_verses.get((self.book_n, self.end_chapter),[]): return False #Making implicit assumption that there are no two consecutive missing verses.
+        if self.end_verse in self.bd.missing_verses.get((self.book_n, self.end_chapter),[]): return False
         #Everything checked; return True
         return True
     
@@ -509,7 +514,12 @@ class GroupBunch:
         return book + " " + ", ".join(textual_bunches)
 
 
-def check_reference(book_n, start_chapter, start_verse, end_chapter, end_verse, bd):
+def check_reference(book_n, bd, start_chapter=None, start_verse=None, end_chapter=None, end_verse=None):
+    """
+    Check and normalise numeric reference inputs (start_chapter, start_verse, end_chapter and end_verse)
+    Where possible, missing inputs will be inferred. Thus for example, if start_chapter and end_chapter
+    are provided but start_verse and end_verse are not, it will be assumed that the whole chapter was intended.
+    """
 
     #Check which numbers have been provided.
     sc = sv = ec = ev = True
@@ -606,15 +616,6 @@ def check_reference(book_n, start_chapter, start_verse, end_chapter, end_verse, 
         end_verse = bd.last_verses[book_n, end_chapter]
     elif end_verse > bd.last_verses[book_n, end_chapter]:
         end_verse = bd.last_verses[book_n, end_chapter]
-
-    #Raise exception now if passage is still invalid
-    if start_chapter > bd.number_chapters[book_n]: raise InvalidPassageException()
-    if start_verse > bd.last_verses[book_n,start_chapter]: raise InvalidPassageException()
-    if start_chapter > end_chapter:
-        raise InvalidPassageException()
-    elif start_chapter == end_chapter and start_verse > end_verse:
-        raise InvalidPassageException()
-    if bd.number_chapters[book_n] == 1 and (start_chapter > 1 or end_chapter > 1): raise InvalidPassageException()
 
     #Check that neither the start or end verses are "missing verses"; shorten if not
     if start_chapter == end_chapter:
