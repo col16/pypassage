@@ -249,6 +249,7 @@ class TestPassageCollection(unittest.TestCase):
         self.assertEqual(str(C(P('Eph',1,1,1,2),P('Mat',5))), "Ephesians 1:1-2; Matthew 5")
         self.assertEqual(str(C(P('Eph',1),P('Eph',3),P('Eph',5,9),P('Mat',5))), "Ephesians 1, 3, 5:9; Matthew 5")
         self.assertEqual(str(C(P('Eph',1),P('Eph',3),P('Eph',5,9,6,2),P('Mat',5))), "Ephesians 1, 3, 5:9-6:2; Matthew 5")
+        self.assertEqual(str(C(P('Eph',start_chapter=1,end_chapter=3),P('Eph',4))), "Ephesians 1-3, 4")
         self.assertEqual(str(C(P('Eph',1,1),P('Eph',3),P('Eph',5,9),P('Mat',5))), "Ephesians 1:1, ch. 3, 5:9; Matthew 5")
         self.assertEqual(str(C(P('Eph',1),P('Gen',3,2),P('Gen',3,6),P('Gen',8),P('Mat',5))), "Ephesians 1; Genesis 3 vv. 2, 6, ch. 8; Matthew 5")
         self.assertEqual(str(C(P('Eph',1,1),P('Eph',3),P('Eph',5),P('Mat',5))), "Ephesians 1:1, chs. 3, 5; Matthew 5")
