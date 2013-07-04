@@ -3,8 +3,7 @@ import bibledata
 from collections import defaultdict
 
 ## To do ##
-#Make PassageCollection object to be list-like
-#Tidy up reference_string and GroupBunch
+#Tidy up reference_string and MCBGroup
 
 ## Long term ##
 #Implement string parsing
@@ -113,10 +112,13 @@ class Passage:
                 self.end_chapter == self.bd.number_chapters[self.book_n] and
                 self.end_verse   == self.bd.last_verses[self.book_n, self.end_chapter])
     
-    def complete_chapter(self):
-        """ Return True if this reference is for a whole chapter. """
+    def complete_chapter(self, multiple=False):
+        """
+        Return True if this reference is for a (single) whole chapter.
+        Alternatively, if multiple=True, this returns true if reference is for any number of whole chapters.
+        """
         return (self.start_verse == 1 and
-                self.start_chapter == self.end_chapter and
+                (multiple == True or self.start_chapter == self.end_chapter) and
                 self.end_verse == self.bd.last_verses[self.book_n, self.end_chapter])
 
     def truncate(self, number_verses=None, proportion_of_book=None):
@@ -330,14 +332,16 @@ class PassageCollection(list):
     def reference_string(self, abbreviated=False, dash="-"):
         """
         x.reference_string() <==> str(x)
-        Return string representation of PassageCollection.
+        Return string representation of these references.
         """
         #First checking easy options.
         if len(self) == 0: return ""
         if len(self) == 1: return str(self[0])
+        
         #Filtering out any invalid passages
         passagelist = [p for p in self if p.is_valid()]
         if len(passagelist) == 0: return ""
+
         #Group by consecutive passages with same book
         groups = []; i=0;
         while i < len(passagelist):
@@ -347,11 +351,12 @@ class PassageCollection(list):
             group_end = i
             groups.append(passagelist[group_start:group_end+1])
             i += 1
+        
         #Create strings for each group (of consecutive passages within the same book)
         group_strings = [];
         for group in groups:
-            #Treat single-chapter books differently
             if group[0].bd.number_chapters[group[0].book_n] == 1:
+                #Group of reference(s) from a single-chapter book
                 parts = []
                 for p in group:
                     if p.start_verse == p.end_verse:
@@ -360,15 +365,17 @@ class PassageCollection(list):
                         parts.append(str(p.start_verse) + dash + str(p.end_verse))
                 group_strings.append(group[0].book_name(abbreviated) + " " + ", ".join(parts))
             else:
-                #Multi-chapter-book group
+                #Group of references from multi-chapter book
                 if (len(group) == 1 and group[0].complete_book() == 1.0):
                     #Special case where there is only one reference in bunch, and that reference is for a whole book.
                     group_strings.append(group[0].book_name(abbreviated))
                 else:
-                    #For readability and simplicity, this part of the algorithm is within the GroupBunch class
-                    bunched = GroupBunch()
+                    #For readability and simplicity, this part of the algorithm is within the MCBGroup class
+                    bunched = MCBGroup()
                     for p in group: bunched.add(p)
                     group_strings.append(bunched.reference_string(abbreviated, dash))
+
+        #Return completed string
         return "; ".join(group_strings)
     
     def __add__(self,other):
@@ -431,31 +438,38 @@ class PassageCollection(list):
         return "PassageCollection(" + ", ".join([repr(x) for x in self]) + ")"
 
 
-class GroupBunch:
+class MCBGroup:
     """
-    Internal-use class for creating strings for 'bunches' of passages that are in the same book,
-    and where that book is a multi-chapter book.
+    Internal-use class for creating reference strings for groups of passages that are all from the same multi-chapter book
     """
     def __init__(self):
-        self.bunches = defaultdict(lambda: []) #lists of reference objects, indexed by order
-        self.full_chapter_bunch = defaultdict(lambda: False)
+        self.bunches = defaultdict(lambda: []) #Dictionary of reference objects (each within a list), indexed by order that they were added
+        self.full_chapter_bunch = defaultdict(lambda: False) #Boolean indicating whether corresponding self.bunches reference is for a full chapter
         self.order = 0
-        self.last_full_chapter_loc = -1 #order
-        self.last_partial_chapter = [None, -1] #[chapter, order]
-    def add(self,reference):
+        self.last_full_chapter_loc = -1 #Order of last full-chapter reference
+        self.last_partial_chapter = [None, -1] #[chapter, order] of last reference that wasn't a full chapter
+        
+    def add(self, reference):
+        #Set the book_n variable if this is the first passage added
         if self.order == 0:
             self.book_n = reference.book_n
-        if reference.complete_chapter():
+        else:
+            if reference.book_n != self.book_n: raise Exception
+        
+        if reference.complete_chapter(multiple=True):
             #Reference is a full chapter length
             if self.last_full_chapter_loc >= 0:
-                #Last reference was a full chapter, so add it to previous bunch
+                #Last reference was a full chapter, so add it to previous 'bunch'
                 self.bunches[self.last_full_chapter_loc].append(reference)
             else:
+                #Add new bunch
                 self.bunches[self.order].append(reference)
                 self.last_full_chapter_loc = self.order
                 self.full_chapter_bunch[self.order] = True
+            #Reset last_partial_chapter
             self.last_partial_chapter = [None, -1]
         else:
+            #Reference is not a full-chapter length passage
             if reference.start_chapter == reference.end_chapter:
                 #Some verse range that is within the same chapter
                 if reference.start_chapter == self.last_partial_chapter[0]:
@@ -471,24 +485,30 @@ class GroupBunch:
                 self.bunches[self.order].append(reference)
             self.last_full_chapter_loc = -1
         self.order += 1
+        
     def reference_string(self, abbreviated, dash):
         if self.order == 0:
             #No passages have been added to bunch; return blank.
             return ""
-        #Get passage bunches and order them
-        ordered_bunches = sorted(self.bunches.items(), cmp=lambda x,y: cmp(x[0], y[0]) )
-        #Internal function
+
+        #Helper functions
         def full_ch_ref(reference):
+            #Chapter string for references that are one or many full chapters
             if reference.start_chapter == reference.end_chapter:
                 return str(reference.start_chapter)
             else:
                 return str(reference.start_chapter) + dash + str(reference.end_chapter)
         def verses_only(reference):
+            #Verse string
             if reference.start_verse == reference.end_verse:
                 return str(reference.start_verse)
             else:
                 return str(reference.start_verse) + dash + str(reference.end_verse)
-        #Now iterate through bunches, creating their textual representations
+
+        #Passage bunches in ordered list
+        ordered_bunches = sorted(self.bunches.items(), cmp=lambda x,y: cmp(x[0], y[0]) )
+        
+        #Iterate through bunches, creating their textual representations
         textual_bunches = []
         for order, bunch in ordered_bunches:
             if self.full_chapter_bunch[order]:
