@@ -197,12 +197,32 @@ class TestPassage(unittest.TestCase):
         self.assertEqual(P('Gen').truncate(proportion_of_book = 0.5), P('Gen',1,1,27,38))
 
 class TestPassageCollection(unittest.TestCase):
+    def test_init(self):
+        self.assertEqual(C(P('Gen'),[P('Mat'),P('Mar')],P('Exo')),
+                         C(P('Gen'),P('Mat'),P('Mar'),P('Exo')))
     def test_summation(self):
-        self.assertEqual(P('Eph',1)+P('Mat',1), C(P('Eph',1),P('Mat',1)))
-        self.assertEqual(C(P('Eph',1))+P('Mat',1), C(P('Eph',1),P('Mat',1)))
-        self.assertEqual(P('Eph',1)+C(P('Mat',1)), C(P('Eph',1),P('Mat',1)))
-        self.assertEqual(C(P('Eph',1))+C(P('Mat',1)), C(P('Eph',1),P('Mat',1)))
-    def test_mixed(self):
+        r = C(P('Eph',1),P('Mat',1))
+        self.assertEqual(P('Eph',1)+P('Mat',1), r)
+        self.assertEqual(C(P('Eph',1))+P('Mat',1), r)
+        self.assertEqual(P('Eph',1)+C(P('Mat',1)), r)
+        self.assertEqual(C(P('Eph',1))+C(P('Mat',1)), r)
+    def test_append(self):
+        t = C(P('Eph',1))
+        t.append(P('Mat',1))
+        self.assertEqual(t, C(P('Eph',1),P('Mat',1)))
+    def test_extend(self):
+        t = C(P('Eph',1))
+        t.extend([P('Mat',1),P('Mat',2)])
+        self.assertEqual(t, C(P('Eph',1),P('Mat',1),P('Mat',2)))
+    def test_insert(self):
+        t = C(P('Eph',1),P('Mat',1),P('Mat',2))
+        t.insert(1,P('Eph',2))
+        self.assertEqual(t, C(P('Eph',1),P('Eph',2),P('Mat',1),P('Mat',2)))
+    def test_iteration(self):
+        t = C(P('Eph',1),P('Mat',1),P('Mat',2))
+        for i, passage in enumerate(t):
+            self.assertEqual(passage, t[i])
+    def test_string(self):
         #Avoiding ambiguity is the highest priority here!
         #All within the same chapter
         self.assertEqual(str(C(P('Eph',1))), "Ephesians 1")
