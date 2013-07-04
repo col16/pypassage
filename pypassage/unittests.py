@@ -196,6 +196,7 @@ class TestPassage(unittest.TestCase):
         self.assertEqual(P('Mar', 9, 1, 9, 50).truncate(proportion_of_book = 45./673), P(book=41, start_chapter=9, start_verse=1, end_chapter=9, end_verse=47))
         self.assertEqual(P('Gen').truncate(proportion_of_book = 0.5), P('Gen',1,1,27,38))
 
+
 class TestPassageCollection(unittest.TestCase):
     def test_init(self):
         self.assertEqual(C(P('Gen'),[P('Mat'),P('Mar')],P('Exo')),
@@ -255,6 +256,7 @@ class TestPassageCollection(unittest.TestCase):
         #Single-chapter books
         self.assertEqual(str(C(P('Phm',1),P('Phm',1,3,1,6),P('Phm',15))), "Philemon 1, 3-6, 15")
 
+
 class TestPassageLookup(unittest.TestCase):
     def test_esv(self):
         self.assertEqual(bd.get_passage_text(P('Gen',1,1))[0], '   In the beginning, God created the heavens and the earth.')
@@ -281,42 +283,43 @@ class TestPassageLookup(unittest.TestCase):
         (p,t) = bd.get_passage_text(P('Genesis',27,40,34,28), cache=sc)
         self.assertEqual(len(sc.cache),2)
         self.assertEqual(t,False)
-        
-class TestParsing(unittest.TestCase):
-    def test_reference_string_parsing(self):
-        self.assertEqual(passages_from_string("Gen"), C(P('Gen')) )
-        self.assertEqual(passages_from_string("Genesis"), C(P('Gen')) )
-        self.assertEqual(passages_from_string("Gen 1"), C(P('Gen',1)) )
-        self.assertEqual(passages_from_string("Gen 1:1"), C(P('Gen',1,1)) )
-        self.assertEqual(passages_from_string("Gen 1:1a"), C(P('Gen',1,1)) )
-        self.assertEqual(passages_from_string("Gen 1:1b"), C(P('Gen',1,1)) )
-        self.assertEqual(passages_from_string("Gen 1:1-3"), C(P('Gen',1,1,1,3)) )
-        self.assertEqual(passages_from_string("Gen 1:1-2:4"), C(P('Gen',1,1,2,4)) )
-        self.assertEqual(passages_from_string("Gen 1-2"), C(P('Gen',start_chapter=1,end_chapter=2)) )
-        self.assertEqual(passages_from_string("Gen 1-3:2"), C() ) #invalid; should not return any passage
-        self.assertEqual(passages_from_string("Gen 1,3,5"), C(P('Gen',1),P('Gen',3),P('Gen',5)) )
-        self.assertEqual(passages_from_string("Gen 1:1,3,5"), C(P('Gen',1,1),P('Gen',1,3),P('Gen',1,5)) )
-        self.assertEqual(passages_from_string("Gen 1,3:2,5"), C(P('Gen',1),P('Gen',3,2),P('Gen',5)) )
-        self.assertEqual(passages_from_string("Gen 1:1,3:2"), C(P('Gen',1,1),P('Gen',3,2)) )
-        self.assertEqual(passages_from_string("Gen 1:1-4,3:2"), C(P('Gen',1,1,1,4),P('Gen',3,2)) )
-        self.assertEqual(passages_from_string("Gen 1:1;5:2"), C(P('Gen',1,1),P('Gen',5,2)) )
-        self.assertEqual(passages_from_string("Gen 1-3,5:2"), C(P('Gen',start_chapter=1,end_chapter=3),P('Gen',5,2)) )
-        self.assertEqual(passages_from_string("Gen 1:3,5,7;2:4"), C(P('Gen',1,3),P('Gen',1,5),P('Gen',1,7),P('Gen',2,4)) )
-        self.assertEqual(passages_from_string("Gen 1:3;5;7;2:4"), C(P('Gen',1,3),P('Gen',5),P('Gen',7),P('Gen',2,4)) )
-        self.assertEqual(passages_from_string("Gen1.1,3.2"), C(P('Gen',1,1),P('Gen',3,2)) )
-        self.assertEqual(passages_from_string("2 Tim 1:1"), C(P('2Tim',1,1)) )
-        self.assertEqual(passages_from_string("2Tim 1:1"), C(P('2Ti',1,1)) )
-        self.assertEqual(passages_from_string("II Tim 1:1"), C(P('2Ti',1,1)) )
-        self.assertEqual(passages_from_string("Philemon 3-5"), C(P('Phm',start_chapter=3,end_chapter=5)) )
-        self.assertEqual(passages_from_string("Matt and Tim are cool"), C() ) #should not return any passage
-        self.assertEqual(passages_from_string("Matthew and John went skiing"), C() ) #should not return any passage
-        self.assertEqual(passages_from_string("love, 2 Cor"), C(P('2Co')) )
-        self.assertEqual(passages_from_string("Gen 3: the fall"), C(P('Gen',3)) )
 
-        #Long-term, we want to be able to be much more generic still. For example:
-        #self.assertEqual(passages_from_string("Genesis chapter 1, verses 3 to 5"), C(P('Gen',1,3,1,5)) )
-        #self.assertEqual(passages_from_string("Gen ch 1 v1"), C(P('Gen',1,1)) )
-        #self.assertEqual(passages_from_string("Gen 1, v1-3"), C(P('Gen',1,1,1,3)) )
+
+#class TestParsing(unittest.TestCase):
+#    def test_reference_string_parsing(self):
+#        self.assertEqual(passages_from_string("Gen"), C(P('Gen')) )
+#        self.assertEqual(passages_from_string("Genesis"), C(P('Gen')) )
+#        self.assertEqual(passages_from_string("Gen 1"), C(P('Gen',1)) )
+#        self.assertEqual(passages_from_string("Gen 1:1"), C(P('Gen',1,1)) )
+#        self.assertEqual(passages_from_string("Gen 1:1a"), C(P('Gen',1,1)) )
+#        self.assertEqual(passages_from_string("Gen 1:1b"), C(P('Gen',1,1)) )
+#        self.assertEqual(passages_from_string("Gen 1:1-3"), C(P('Gen',1,1,1,3)) )
+#        self.assertEqual(passages_from_string("Gen 1:1-2:4"), C(P('Gen',1,1,2,4)) )
+#        self.assertEqual(passages_from_string("Gen 1-2"), C(P('Gen',start_chapter=1,end_chapter=2)) )
+#        self.assertEqual(passages_from_string("Gen 1-3:2"), C() ) #invalid; should not return any passage
+#        self.assertEqual(passages_from_string("Gen 1,3,5"), C(P('Gen',1),P('Gen',3),P('Gen',5)) )
+#        self.assertEqual(passages_from_string("Gen 1:1,3,5"), C(P('Gen',1,1),P('Gen',1,3),P('Gen',1,5)) )
+#        self.assertEqual(passages_from_string("Gen 1,3:2,5"), C(P('Gen',1),P('Gen',3,2),P('Gen',5)) )
+#        self.assertEqual(passages_from_string("Gen 1:1,3:2"), C(P('Gen',1,1),P('Gen',3,2)) )
+#        self.assertEqual(passages_from_string("Gen 1:1-4,3:2"), C(P('Gen',1,1,1,4),P('Gen',3,2)) )
+#        self.assertEqual(passages_from_string("Gen 1:1;5:2"), C(P('Gen',1,1),P('Gen',5,2)) )
+#        self.assertEqual(passages_from_string("Gen 1-3,5:2"), C(P('Gen',start_chapter=1,end_chapter=3),P('Gen',5,2)) )
+#        self.assertEqual(passages_from_string("Gen 1:3,5,7;2:4"), C(P('Gen',1,3),P('Gen',1,5),P('Gen',1,7),P('Gen',2,4)) )
+#        self.assertEqual(passages_from_string("Gen 1:3;5;7;2:4"), C(P('Gen',1,3),P('Gen',5),P('Gen',7),P('Gen',2,4)) )
+#        self.assertEqual(passages_from_string("Gen1.1,3.2"), C(P('Gen',1,1),P('Gen',3,2)) )
+#        self.assertEqual(passages_from_string("2 Tim 1:1"), C(P('2Tim',1,1)) )
+#        self.assertEqual(passages_from_string("2Tim 1:1"), C(P('2Ti',1,1)) )
+#        self.assertEqual(passages_from_string("II Tim 1:1"), C(P('2Ti',1,1)) )
+#        self.assertEqual(passages_from_string("Philemon 3-5"), C(P('Phm',start_chapter=3,end_chapter=5)) )
+#        self.assertEqual(passages_from_string("Matt and Tim are cool"), C() ) #should not return any passage
+#        self.assertEqual(passages_from_string("Matthew and John went skiing"), C() ) #should not return any passage
+#        self.assertEqual(passages_from_string("love, 2 Cor"), C(P('2Co')) )
+#        self.assertEqual(passages_from_string("Gen 3: the fall"), C(P('Gen',3)) )
+#
+#        #Long-term, we want to be able to be much more generic still. For example:
+#        #self.assertEqual(passages_from_string("Genesis chapter 1, verses 3 to 5"), C(P('Gen',1,3,1,5)) )
+#        #self.assertEqual(passages_from_string("Gen ch 1 v1"), C(P('Gen',1,1)) )
+#        #self.assertEqual(passages_from_string("Gen 1, v1-3"), C(P('Gen',1,1,1,3)) )
 
 
 if __name__ == '__main__': #If run as a command line script
