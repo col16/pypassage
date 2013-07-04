@@ -4,7 +4,7 @@ from collections import defaultdict
 
 ## To do ##
 #Make PassageCollection object to be list-like
-#__add__ should return Passage if second passage starts immediately after first passage
+#Tidy up reference_string and GroupBunch
 
 ## Long term ##
 #Implement string parsing
@@ -303,45 +303,40 @@ class Passage:
         if isinstance(other,Passage):
             return PassageCollection(self,other)
         elif isinstance(other,PassageCollection):
-            return PassageCollection(self,other.passages)
+            return PassageCollection(self,other)
         else:
             return NotImplemented
 
 
-class PassageCollection:
-    def __init__(self,*args):
+class PassageCollection(list):
+    """
+    Class to contain list of Passage objects and derive corresponding reference strings
+    """
+    def __init__(self, *args):
         """
         PassageCollection initialisation. Passages to be in collection may be passed in directly or as lists.
         For example, the following is valid:
         PassageCollection( Passage('Gen'), Passage('Exo'), [Passage('Mat'), Passage('Mar')])
         """
-        self.passages = []
+        passages = []
         for arg in args:
             if isinstance(arg, Passage):
-                self.passages.append(arg)
+                passages.append(arg)
             elif isinstance(arg, list):
                 for item in arg:
-                    if isinstance(item,Passage): self.passages.append(item)
-    def append(self, passage):
-        """
-        Append single Passage object to collection.
-        """
-        if isinstance(passage, Passage): self.passages.append(passage)
-    def sort(self):
-        """
-        Sort Passage objects in collection based on default sorting order
-        """
-        return self.passages.sort()
+                    if isinstance(item, Passage): passages.append(item)
+        super(PassageCollection, self).__init__(passages)
+                    
     def reference_string(self, abbreviated=False, dash="-"):
         """
         x.reference_string() <==> str(x)
-        Return string representation of PassageCollection. Primarily for internal usage.
+        Return string representation of PassageCollection.
         """
         #First checking easy options.
-        if len(self.passages) == 0: return ""
-        if len(self.passages) == 1: return str(self.passages[0])
+        if len(self) == 0: return ""
+        if len(self) == 1: return str(self[0])
         #Filtering out any invalid passages
-        passagelist = [p for p in self.passages if p.is_valid()]
+        passagelist = [p for p in self if p.is_valid()]
         if len(passagelist) == 0: return ""
         #Group by consecutive passages with same book
         groups = []; i=0;
@@ -375,57 +370,65 @@ class PassageCollection:
                     for p in group: bunched.add(p)
                     group_strings.append(bunched.reference_string(abbreviated, dash))
         return "; ".join(group_strings)
+    
+    def __add__(self,other):
+        """
+        x.__add__(y) <==> x + y
+        Addition of PassageCollection objects
+        """
+        if isinstance(other,Passage):
+            return PassageCollection(self,other)
+        elif isinstance(other,PassageCollection):
+            return PassageCollection(self,other)
+        else:
+            return NotImplemented
+        
+    def append(self, passage):
+        """ Add a passage to the end of the collection """
+        if isinstance(passage, Passage): super(PassageCollection, self).append(passage)
+
+    def extend(self, L):
+        """ Extend the collection by appending all the items in the given list """
+        if isinstance(L, PassageCollection):
+            super(PassageCollection, self).extend(L.passages)
+        else:
+            super(PassageCollection, self).extend(L)
+
+    def insert(self, i, passage):
+        """ Insert passage at a given position """
+        if isinstance(passage, Passage): super(PassageCollection, self).insert(i, passage)
+
     def __str__(self):
         """
         x.__str__() <==> str(x)
         Return passage string
         """
         return self.reference_string()
+    
     def __unicode__(self):
         """
         x.__unicode__() <==> unicode(x)
         Return unicode version of passage string. Uses en-dash for ranges.
         """
         return unicode(self.reference_string(dash=u"–"))
+    
     def abbr(self):
         """
         Return abbreviated passage string
         """
         return self.reference_string(abbreviated=True)
+    
     def uabbr(self):
         """
         Return unicode-type abbreviated passage string. Uses en-dash for ranges.
         """
         return unicode(self.reference_string(abbreviated=True, dash=u"–"))
+    
     def __repr__(self):
         """
         x.__repr__() <==> x
         """
-        return "PassageCollection(" + ", ".join([repr(x) for x in self.passages]) + ")"
-    def __add__(self,other):
-        """
-        x.__add__(y) <==> x + y
-        """
-        if isinstance(other,Passage):
-            return PassageCollection(self.passages,other)
-        elif isinstance(other,PassageCollection):
-            return PassageCollection(self.passages,other.passages)
-        else:
-            return NotImplemented
-    def __eq__(self,other):
-        """
-        x.__eq__(y) <==> x == y
-        """
-        if not isinstance(other,PassageCollection): return False
-        if len(self.passages) != len(other.passages): return False
-        for (a,b) in zip(self.passages,other.passages):
-            if a != b: return False
-        return True
-    def __ne__(self,other):
-        """
-        x.__ne__(y) <==> x != y
-        """
-        return not self.__eq__(other)
+        return "PassageCollection(" + ", ".join([repr(x) for x in self]) + ")"
 
 
 class GroupBunch:
