@@ -59,10 +59,15 @@ class BiblePassage(models.Model):
         Fetch biblical text that object represents
         """
         if getattr(self,'p', None) == None:
-            try:
-                self.build_object()
-            except InvalidPassageException, e:
-                return u"Invalid passage"
+            #No pypassage object p; attempt to create it
+            if getattr(self,'book', '') == '':
+                #Assume passage hasn't yet been initialised; return blank
+                return u""
+            else:
+                try:
+                    self.build_object()
+                except InvalidPassageException, e:
+                    return u"Invalid passage"
         (text, self.truncated) = get_passage_text(self.p, **kwargs)
         return text
 
