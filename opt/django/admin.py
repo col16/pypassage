@@ -6,6 +6,6 @@ from django.contrib import admin
 from models import BiblePassage
 
 class BiblePassageOptions(admin.ModelAdmin):
-    list_display = ('__unicode__','is_reading','is_primary_passage')
+    list_display = ('__unicode__','reading','primary_passage')
 
 admin.site.register(BiblePassage, BiblePassageOptions)

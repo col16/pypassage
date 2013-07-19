@@ -670,9 +670,9 @@ class InvalidPassageException(Exception):
     pass
 
 
-def get_passage_text(*args, **kwargs):
-    translation = kwargs.get(translation,"ESV")
-    return bible_data(translation).get_passage_text()
+def get_passage_text(passage, **kwargs):
+    translation = kwargs.get('translation',"ESV")
+    return bible_data(translation).get_passage_text(passage, **kwargs)
 
 
 def bible_data(translation):
