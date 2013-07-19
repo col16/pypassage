@@ -18,8 +18,8 @@ class BiblePassage(models.Model):
     end_chapter = models.IntegerField(blank=True)
     end_verse = models.IntegerField(blank=True)
     #In a church sermon setting, passages are usually readings, primary passages, both, or neither.
-    reading = models.BooleanField(default=False)
-    primary_passage = models.BooleanField(default=False)
+    reading = models.BooleanField(default=False, help_text="Was this passage read out during the service?")
+    primary_passage = models.BooleanField(default=False, help_text="Was this passage the topic of the talk?")
     #Starting and finishing integers, in order to represent passage starting and endings in purely
     #numeric form. Primarily useful for efficient database filtering of passages.
     #First two numerals are book number (eg. Gen = 01 and Rev = 66). Next three numerals are chapter, and
