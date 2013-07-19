@@ -2,9 +2,6 @@
 import bibledata
 from collections import defaultdict
 
-## To do ##
-#Tidy up reference_string and MCBGroup
-
 ## Long term ##
 #Implement string parsing
 
@@ -457,7 +454,7 @@ class MCBGroup:
             if reference.book_n != self.book_n: raise Exception
         
         if reference.complete_chapter(multiple=True):
-            #Reference is a full chapter length
+            #Reference is one or more full chapters in length
             if self.last_full_chapter_loc >= 0:
                 #Last reference was a full chapter, so add it to previous 'bunch'
                 self.bunches[self.last_full_chapter_loc].append(reference)
@@ -492,12 +489,18 @@ class MCBGroup:
             return ""
 
         #Helper functions
-        def full_ch_ref(reference):
+        def full_ch_ref(reference, verse_encountered):
             #Chapter string for references that are one or many full chapters
-            if reference.start_chapter == reference.end_chapter:
-                return str(reference.start_chapter)
+            if verse_encountered:
+                if reference.start_chapter == reference.end_chapter:
+                    return str(reference.start_chapter) + ":" + str(reference.start_verse) + dash + str(reference.end_verse)
+                else:
+                    return str(reference.start_chapter) + ":" + str(reference.start_verse) + dash + str(reference.end_chapter) + ":" + str(reference.end_verse)
             else:
-                return str(reference.start_chapter) + dash + str(reference.end_chapter)
+                if reference.start_chapter == reference.end_chapter:
+                    return str(reference.start_chapter)
+                else:
+                    return str(reference.start_chapter) + dash + str(reference.end_chapter)
         def verses_only(reference):
             #Verse string
             if reference.start_verse == reference.end_verse:
@@ -505,21 +508,19 @@ class MCBGroup:
             else:
                 return str(reference.start_verse) + dash + str(reference.end_verse)
 
-        #Passage bunches in ordered list
+        #List of passage bunches, sorted by order-of-addition
         ordered_bunches = sorted(self.bunches.items(), cmp=lambda x,y: cmp(x[0], y[0]) )
         
         #Iterate through bunches, creating their textual representations
         textual_bunches = []
+        verse_encountered = False
         for order, bunch in ordered_bunches:
             if self.full_chapter_bunch[order]:
-                if order == 0:
-                    textual_bunches.append(", ".join([full_ch_ref(x) for x in bunch]))
-                elif len(bunch) == 1:
-                    textual_bunches.append("ch. " + full_ch_ref(bunch[0]))
-                else:
-                    textual_bunches.append("chs. " + ", ".join([full_ch_ref(x) for x in bunch]))
+                #All passages in this bunch are for full chapters
+                    textual_bunches.append(", ".join([full_ch_ref(x, verse_encountered) for x in bunch]))
             else:
                 #Not a full-chapter bunch.
+                verse_encountered = True
                 if len(bunch) == 1:
                     #NB: this bunch may be over two or more chapters
                     if bunch[0].start_chapter == bunch[0].end_chapter:
@@ -529,7 +530,7 @@ class MCBGroup:
                     pass
                 else:
                     #Guaranteed (via self.add() algorithm) to be within same chapter
-                    textual_bunches.append(str(bunch[0].start_chapter) + " vv. " + ", ".join([verses_only(x) for x in bunch]))
+                    textual_bunches.append(", ".join([str(bunch[0].start_chapter) + ":" + verses_only(x) for x in bunch]))
         if abbreviated:
             book = bibledata.book_names[self.book_n][2]
         else:
