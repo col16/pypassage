@@ -1,7 +1,6 @@
 from reference import PassageCollection as C, Passage as P, InvalidPassageException
 import bibledata.esv as bd
 from bibledata import text_cache
-from reference_parse import passages_from_string
 import unittest
 
 class TestBookData(unittest.TestCase):
