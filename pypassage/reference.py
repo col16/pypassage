@@ -236,7 +236,15 @@ class Passage:
                         return self.book_name(abbreviated) + " " + str(self.start_chapter) + dash + str(self.end_chapter)
                 else:
                     return self.book_name(abbreviated) + " " + str(self.start_chapter) + ":" + str(self.start_verse) + dash + str(self.end_chapter) + ":" + str(self.end_verse)
-                
+    
+    def osisRef(self):
+        """
+        Return reference using the formal OSIS cannonical reference system.
+        See http://www.bibletechnologies.net/ for details
+        """
+        return bibledata.osis.normative_book_names[self.book_n] + "." + str(self.start_chapter) + "." + str(self.start_verse) + "-" +\
+               bibledata.osis.normative_book_names[self.book_n] + "." + str(self.end_chapter) + "." + str(self.end_verse)
+    
     def __str__(self):
         """
         x.__str__() <==> str(x)

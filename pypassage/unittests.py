@@ -166,6 +166,9 @@ class TestPassage(unittest.TestCase):
         self.assertEqual(str(P(book='PSA', start_chapter=21, start_verse=1)), "Psalm 21:1") #Psalm, singular
         self.assertEqual(str(P(book='PSA', start_chapter=21, end_chapter=22)), "Psalms 21-22") #Psalms, plural
 
+    def test_passage_strings(self):
+        self.assertEqual(P(book='GEN', start_chapter=1, start_verse=1, end_chapter=1, end_verse=2).osisRef(), "Gen.1.1-Gen.1.2")
+    
     #Testing number of verses within passage
     def test_number_verses(self):
         self.assertEqual(len(P(book='GEN', start_chapter=1, start_verse=1, end_chapter=1, end_verse=3)), 3)
