@@ -3,4 +3,4 @@
 *.lnk
 *~
 *.py[co]
-
+dist/
