@@ -3,4 +3,5 @@
 *.lnk
 *~
 *.py[co]
+MANIFEST
 dist/
