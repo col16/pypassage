@@ -33,11 +33,11 @@ class TestBookData(unittest.TestCase):
         found_3 = []
         found_std = []
         for book_n in range(1,67):
-            (abbr_3,name,abbr_std) = bd.book_names.get(book_n,(None,None))
+            (abbr_3,name,abbr_std) = bd.standard_book_names.get(book_n,(None,None))
             if abbr_3 == None:
                 self.fail("Abbreviation not found for book "+str(book_n))
             elif bd.book_numbers.get(abbr_3,None) != book_n:
-                self.fail("book_number entry for "+str(abbr_3)+" not the same as its number in book_names dict")
+                self.fail("book_number entry for "+str(abbr_3)+" not the same as its number in standard_book_names dict")
             elif abbr_3 in found_3:
                 self.fail("Duplicate found for three-letter code "+str(abbr_3))
             elif abbr_std in found_std:

@@ -2,7 +2,7 @@
 Book name and number information; common to all translation data
 """
 
-book_names = {
+standard_book_names = {
     1:("GEN","Genesis","Gn"),
     2:("EXO","Exodus","Ex"),
     3:("LEV","Leviticus","Lv"),
@@ -70,8 +70,8 @@ book_names = {
     65:("JDE","Jude","Jude"),
     66:("REV","Revelation","Rv") }
     
-#Creating reverse dictionary of book_names data (i.e. keyed to book name and returning corresponding book number)
+#Creating reverse dictionary of standard_book_names data (i.e. keyed to book name and returning corresponding book number)
 book_numbers = {}
-for book, names in book_names.items():
+for book, names in standard_book_names.items():
    for name in names:
       book_numbers[name.upper()] = book

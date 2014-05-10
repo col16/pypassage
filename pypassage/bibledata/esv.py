@@ -1,18 +1,18 @@
 """
 This file provides the following dictionaries based on data from the ESV bible. Chapter lengths obtained via email from Crossway in Jan 2008.
 
-Dictionary      | Keyed to               | Returns
+Dictionary          | Keyed to               | Returns
 ---------------------------------------------------------------------------
-book_names      | book number            | tuples of corresponding (three letter abbreviation, full name, standard abbreviation)
-book_numbers    | book name              | corresponding book number
-number_chapters | book number            | number of chapters in that book
-last_verses     | (book number, chapter) | last verse of that chapter
+standard_book_names | book number            | tuples of corresponding (three letter abbreviation, full name, standard abbreviation)
+book_numbers        | book name              | corresponding book number
+number_chapters     | book number            | number of chapters in that book
+last_verses         | (book number, chapter) | last verse of that chapter
 ---------------------------------------------------------------------------
 
 In addition, the get_passage_text function is provided to look up passage text for a given passage.
 """
 
-from common import book_names, book_numbers
+from common import standard_book_names, book_numbers
 
 #List recording the last verse in each chapter of each book in the bible. e.g last verse in Leviticus chapter 5 is last_verse_data[2][4].
 last_verse_data =  [[31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20, 67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34, 31, 22, 33, 26],

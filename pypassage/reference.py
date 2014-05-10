@@ -203,12 +203,12 @@ class Passage:
     def book_name(self, abbreviated = False):
         """ Return full or abbreviated book name. """
         if abbreviated:
-            return self.bd.book_names[self.book_n][2]
+            return self.bd.standard_book_names[self.book_n][2]
         else:
             if self.book_n == 19 and self.start_chapter == self.end_chapter:
                 return "Psalm"
             else:
-                return self.bd.book_names[self.book_n][1]
+                return self.bd.standard_book_names[self.book_n][1]
             
     def reference_string(self, abbreviated = False, dash = "-"):
         """ Return string representation of Passage object. """
@@ -540,9 +540,9 @@ class MCBGroup:
                     #Guaranteed (via self.add() algorithm) to be within same chapter
                     textual_bunches.append(", ".join([str(bunch[0].start_chapter) + ":" + verses_only(x) for x in bunch]))
         if abbreviated:
-            book = bibledata.book_names[self.book_n][2]
+            book = bibledata.standard_book_names[self.book_n][2]
         else:
-            book = bibledata.book_names[self.book_n][1]
+            book = bibledata.standard_book_names[self.book_n][1]
         return book + " " + ", ".join(textual_bunches)
 
 
