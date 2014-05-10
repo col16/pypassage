@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
 import re
 from reference import Passage, PassageCollection
 from bibledata import book_numbers
 
 
-pattern = re.compile(r"""
-                     ([a-zA-Z]+)
+pattern = re.compile(ur"""
+                     ([123I+]?\s*[a-zA-Z]+)
                      \s*
                      (\d{1,3})        #chapter
                      (?:
@@ -12,7 +13,7 @@ pattern = re.compile(r"""
                         (\d{1,3})     #verse
                      )?               #zero or one repetition of the above group
                      (?:
-                        -
+                        [-–—]
                         (\d{1,3})     #chapter or verse, depending on above context
                         (?:
                             :
