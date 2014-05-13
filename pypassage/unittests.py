@@ -308,6 +308,7 @@ class TestParsing(unittest.TestCase):
         self.assertEqual(passages_from_string("Philemon 3-5"), C(P('Phm',start_chapter=3,end_chapter=5)) )
         self.assertEqual(passages_from_string("Gen 3: the fall"), C(P('Gen',3)) )
         self.assertEqual(passages_from_string(u"2 Cor 1–2"), C(P('2Co',1,1,2,17)) )
+        self.assertEqual(passages_from_string("Gal 3:1, 2 Cor"), C(P('Gal',3,1),P('2Co',1,1,13,14)) )
         self.assertEqual(passages_from_string("love, 2 Cor"), C(P('2Co')) )
         self.assertEqual(passages_from_string("Gen 1,3,5"), C(P('Gen',1),P('Gen',3),P('Gen',5)) )
         self.assertEqual(passages_from_string("Gen 1:1,3,5"), C(P('Gen',1,1),P('Gen',1,3),P('Gen',1,5)) )
