@@ -1,4 +1,4 @@
-from reference import PassageCollection as C, Passage as P, InvalidPassageException
+from reference import PassageCollection as C, Passage as P, PassageDelta as D, InvalidPassageException
 import bibledata.esv as bd
 from bibledata import text_cache
 import unittest
@@ -260,6 +260,56 @@ class TestPassageCollection(unittest.TestCase):
         self.assertEqual(str(C(P('Eph'),P('Mat',5))), "Ephesians; Matthew 5")
         #Single-chapter books
         self.assertEqual(str(C(P('Phm',1),P('Phm',1,3,1,6),P('Phm',15))), "Philemon 1, 3-6, 15")
+
+
+class TestPassageDelta(unittest.TestCase):
+
+    def test_delta_chapter_with_passage_end(self):
+        #Adding chapters to the end of a passage
+        #Normal behaviour is to increment end_chapter; leaving end_verse unchanged
+        self.assertEqual(P('Gen',1,1,2,3)+D(chapters=1), P('Gen',1,1,3,3))
+        #If incrementing end_chapter means end_verse is past end of chapter, end_verse is truncated
+        self.assertEqual(P('Gen',1,1,1,27)+D(chapters=1), P('Gen',1,1,2,25))
+        #Special case for passages that finish at the end of a chapter already:
+        #here end verse is equal to the last verse of incremented chapter
+        self.assertEqual(P('Gen',3,1,3,24)+D(chapters=1), P('Gen',3,1,4,26))
+    def test_negative_delta_chapter_with_passage_end(self):
+        #Here we want to REMOVE chapters from the end of the passage;
+        #leaving passage shorter than it was
+        self.assertEqual(P('Gen',1,1,3,1)+D(chapters=-1), P('Gen',1,1,2,1))
+        #Automatic truncation
+        self.assertEqual(P('Gen',3,1,4,26)+D(chapters=-1), P('Gen',3,1,3,24))
+        #Special case for passages finishing at the end of a chapter
+        self.assertEqual(P('Gen',1,1,2,25)+D(chapters=-1), P('Gen',1,1,1,31))
+    def test_delta_chapter_with_passage_start(self):
+        #Adding chapters to the START of a passage
+        self.assertEqual(P('Gen',2,1,2,1)+D(chapters=1, passage_end=False), P('Gen',1,1,2,1))
+        #Truncation
+        self.assertEqual(P('Gen',4,26)+D(chapters=1, passage_end=False), P('Gen',3,24,4,26))
+    def test_negative_delta_chapter_with_passage_start(self):
+        #REMOVING chapters from the start of a passage
+        self.assertEqual(P('Gen',4,1,5,32)+D(chapters=-1, passage_end=False), P('Gen',5,1,5,32))
+        #Truncation
+        self.assertEqual(P('Gen',1,31,5,32)+D(chapters=-1, passage_end=False), P('Gen',2,25,5,32))
+
+    def test_delta_verse_with_passage_end(self):
+        #Adding verses to the end of a passage
+        self.assertEqual(P('Gen',1,1)+D(verses=1), P('Gen',1,1,1,2))
+        self.assertEqual(P('Gen',1,1)+D(verses=50), P('Gen',1,1,2,20))
+    def test_negative_delta_verse_with_passage_end(self):
+        #Removing verses from the end of a passage
+        self.assertEqual(P('Gen',1,1,1,31)+D(verses=-1), P('Gen',1,1,1,30))
+    def test_delta_verse_with_passage_start(self):
+        #Adding verses to the start of a passage
+        self.assertEqual(P('Gen',1,2)+D(verses=1, passage_end=False), P('Gen',1,1,1,2))
+        self.assertEqual(P('Gen',2,1)+D(verses=31, passage_end=False), P('Gen',1,1,2,1))
+    def test_negative_delta_verse_with_passage_start(self):
+        #Removing verses from the start of a passage
+        self.assertEqual(P('Gen',1,1,1,31)+D(verses=-1, passage_end=False), P('Gen',1,2,1,31))
+
+    #Tests to add:
+    #Passage deltas that push passage into multiple books
+    #Passage deltas where start or end of bible is encountered (Gen 1:1 or Rev 22:21); truncated automatically
 
 
 class TestPassageLookup(unittest.TestCase):

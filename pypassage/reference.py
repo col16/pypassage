@@ -443,6 +443,122 @@ class PassageCollection(list):
         return "PassageCollection(" + ", ".join([repr(x) for x in self]) + ")"
 
 
+class PassageDelta:
+    """
+    Extension (or contraction) of passages, in chapter or verse increments.
+    """
+    def __init__(self, chapters=0, verses=0, passage_end=True):
+        """
+        PassageDelta initialisation.
+        To add (or remove) chapters and/or verses to the END of a passage, set passage_end=True.
+        To add (or remove) chapters and/or verses to the START of a passage, set passage_end=False.
+        """
+        self.passage_end = passage_end
+        self.delta_chapter = chapters
+        self.delta_verse = verses
+
+    def __add__(self,other):
+        """
+        x.__add__(y) <==> x + y
+        Addition of Passage and PassageDelta objects
+        """
+        if isinstance(other,Passage):
+            if self.passage_end:
+                #Check whether passage currently finishes at the end of a chapter
+                if other.end_verse == other.bd.last_verses[other.book_n, other.end_chapter]:
+                    finishes_at_end_of_chapter = True
+                else:
+                    finishes_at_end_of_chapter = False
+                # Compute chapter difference operation first
+                (end_book_n,
+                    end_chapter,
+                    end_verse) = delta_chapter(self.delta_chapter,
+                                                other.book_n, #other.end_book_n
+                                                other.end_chapter,
+                                                other.end_verse,
+                                                other.bd,
+                                                finishes_at_end_of_chapter=finishes_at_end_of_chapter)
+                # Verse difference operation
+                (end_book_n,
+                    end_chapter,
+                    end_verse) = delta_verse(self.delta_verse,
+                                                end_book_n,
+                                                end_chapter,
+                                                end_verse,
+                                                other.bd)
+
+                return Passage(other.book_n, #other.start_book_n
+                                other.start_chapter,
+                                other.start_verse,
+                                #end_book_n,
+                                end_chapter,
+                                end_verse)
+            else:
+                # Compute chapter difference operation first
+                (start_book_n,
+                    start_chapter,
+                    start_verse) = delta_chapter(-self.delta_chapter,
+                                                    other.book_n, #other.start_book_n
+                                                    other.start_chapter,
+                                                    other.start_verse,
+                                                    other.bd)
+                # Verse difference operation
+                (start_book_n,
+                    start_chapter,
+                    start_verse) = delta_verse(-self.delta_verse,
+                                                    start_book_n,
+                                                    start_chapter,
+                                                    start_verse,
+                                                    other.bd)
+                
+                return Passage(start_book_n, 
+                                start_chapter,
+                                start_verse,
+                                #other.end_book_n,
+                                other.end_chapter,
+                                other.end_verse)
+        else:
+            return NotImplemented
+
+    def __radd__(self,other):
+        return self.__add__(other)
+
+    def __repr__(self):
+        """
+        x.__repr__() <==> x
+        """
+        return "PassageDelta(chapters="+repr(self.delta_chapter)+", verses="+repr(self.delta_verse)+", passage_end="+repr(self.passage_end)+")"
+
+
+def delta_chapter(chapter_difference, current_book_n, current_chapter, current_verse, bible_data, finishes_at_end_of_chapter=False):
+    new_chapter = current_chapter + chapter_difference
+    if new_chapter > bible_data.number_chapters[current_book_n]:
+        overflow_chapters = new_chapter - bible_data.number_chapters[current_book_n]
+        return delta_chapter(overflow_chapters, current_book_n+1, 0, current_verse, bible_data, finishes_at_end_of_chapter)
+    else:
+        if finishes_at_end_of_chapter or current_verse > bible_data.last_verses[current_book_n, new_chapter]:
+            current_verse = bible_data.last_verses[current_book_n, new_chapter]
+        return (current_book_n, new_chapter, current_verse)
+
+
+def delta_verse(verse_difference, current_book_n, current_chapter, current_verse, bible_data):
+    new_verse = current_verse + verse_difference
+    if new_verse > bible_data.last_verses[current_book_n, current_chapter]:
+        overflow_verses =  new_verse - bible_data.last_verses[current_book_n, current_chapter]
+        if current_chapter == bible_data.number_chapters[current_book_n]:
+            return delta_verse(overflow_verses, current_book_n+1, 0, current_verse, bible_data)
+        else:
+            return delta_verse(overflow_verses, current_book_n, current_chapter+1, 0, bible_data)
+    elif new_verse < 1:
+        last_v_prev_chapter = bible_data.last_verses[current_book_n, current_chapter-1]
+        return delta_verse(new_verse, current_book_n, current_chapter-1, last_v_prev_chapter, bible_data)
+    else:
+        return (current_book_n, current_chapter, new_verse)
+
+
+
+# === Internal functions ===
+
 class MCBGroup:
     """
     Internal-use class for creating reference strings for groups of passages that are all from the same multi-chapter book
@@ -676,11 +792,6 @@ def check_reference(book_n, bd, start_chapter=None, start_verse=None, end_chapte
 
 class InvalidPassageException(Exception):
     pass
-
-
-def get_passage_text(passage, **kwargs):
-    translation = kwargs.get('translation',"ESV")
-    return bible_data(translation).get_passage_text(passage, **kwargs)
 
 
 def bible_data(translation):
