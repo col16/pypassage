@@ -167,7 +167,7 @@ def get_passage_text(passage, html = False, options = {}, cache = default_cache)
     #Get text from ESV webservice
     try:
        text = urllib.urlopen("http://www.esvapi.org/v2/rest/passageQuery?"+params).read()
-       cache[params] = (trun_pass.book_n, len(trun_pass), text)
+       cache[params] = (trun_pass.start_book_n, len(trun_pass), text)
        return (text, truncated)
     except IOError:
        return ("Error: Could not fetch passage text!", truncated)

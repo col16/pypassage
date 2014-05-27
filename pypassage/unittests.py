@@ -49,6 +49,11 @@ class TestPassage(unittest.TestCase):
     def test_normal_function(self):
         self.assertEqual(P(book='GEN', start_chapter=1, start_verse=1, end_chapter=2, end_verse=1).is_valid(), True)
         self.assertEqual(P(book='genesis', start_chapter=1, start_verse=1, end_chapter=2, end_verse=1).is_valid(), True)
+        self.assertEqual(P(book='GEN', start_chapter=1, start_verse=1, end_chapter=2, end_verse=1), P(1,1,1,2,1))
+        self.assertEqual(P(book='GEN', start_chapter=1, start_verse=1, end_book='REV', end_chapter=1, end_verse=1).is_valid(), True)
+
+    #Testing of passage if parameters changed manually
+    # esp wrt book_n and start_book_n
 
     #Testing passage normalisation
     def test_multi_chapter_books(self):
@@ -268,6 +273,7 @@ class TestPassageDelta(unittest.TestCase):
         #Adding chapters to the end of a passage
         #Normal behaviour is to increment end_chapter; leaving end_verse unchanged
         self.assertEqual(P('Gen',1,1,2,3)+D(chapters=1), P('Gen',1,1,3,3))
+        self.assertEqual(D(chapters=1)+P('Gen',1,1,2,3), P('Gen',1,1,3,3))
         #If incrementing end_chapter means end_verse is past end of chapter, end_verse is truncated
         self.assertEqual(P('Gen',1,1,1,27)+D(chapters=1), P('Gen',1,1,2,25))
         #Special case for passages that finish at the end of a chapter already:
