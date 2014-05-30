@@ -1,0 +1,13 @@
+
+Dev
+----
+PassageDelta class added
+Multi-book support added. New 'end_book' optional parameter for Passage initialisation function.
+Added Passage.text and PassageCollection.text functions
+Deprecated get_passage_text function
+To do:
+  Deprecate Passage.extend function
+  Add tests for Passage.text and PassageCollection.text functions
+
+1.0
+----

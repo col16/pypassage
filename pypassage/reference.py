@@ -233,7 +233,7 @@ class Passage(object):
                 return self.bd.book_names[self.start_book_n][1]
             
     def reference_string(self, abbreviated = False, dash = "-"):
-        """ Return string representation of Passage object. """
+        """ Return string representation of passage reference. """
         if not self.is_valid(): return 'Invalid passage'
         if self.bd.number_chapters[self.start_book_n] == 1:
             if self.start_verse == self.end_verse:
@@ -267,6 +267,10 @@ class Passage(object):
         return bibledata.osis.normative_book_names[self.start_book_n] + "." + str(self.start_chapter) + "." + str(self.start_verse) + "-" +\
                bibledata.osis.normative_book_names[self.start_book_n] + "." + str(self.end_chapter) + "." + str(self.end_verse)
     
+    def text(self, **kwargs):
+        """ Return the Bible text for this passage. """
+        return self.bd.get_passage_text(self, **kwargs)
+
     def __str__(self):
         """
         x.__str__() <==> str(x)
@@ -359,7 +363,7 @@ class PassageCollection(list):
     def reference_string(self, abbreviated=False, dash="-"):
         """
         x.reference_string() <==> str(x)
-        Return string representation of these references.
+        Return string representation of passage references.
         """
         #First checking easy options.
         if len(self) == 0: return ""
@@ -367,7 +371,7 @@ class PassageCollection(list):
         
         #Filtering out any invalid passages
         passagelist = [p for p in self if p.is_valid()]
-        if len(passagelist) == 0: return ""
+        if len(passagelist) == 0: return "Invalid passages"
 
         #Group by consecutive passages with same book
         groups = []; i=0;
@@ -405,6 +409,10 @@ class PassageCollection(list):
         #Return completed string
         return "; ".join(group_strings)
     
+    def text(self, **kwargs):
+        """ Return the Bible text for these passages. """
+        return "\n\n".join([p.bd.get_passage_text(self, **kwargs) for p in self])
+
     def __add__(self,other):
         """
         x.__add__(y) <==> x + y
@@ -552,6 +560,17 @@ class PassageDelta(object):
         return "PassageDelta(chapters="+repr(self.delta_chapter)+", verses="+repr(self.delta_verse)+", passage_end="+repr(self.passage_end)+")"
 
 
+def get_passage_text(passage, **kwargs):
+    """ Get text of supplied Passage object """
+    print "Deprecated function; use Passage.text or PassageCollection.text instead"
+    translation = kwargs.get('translation',"ESV")
+    return bible_data(translation).get_passage_text(passage, **kwargs)
+
+
+
+
+
+# === Internal functions ===
 def delta_chapter(chapter_difference, current_book_n, current_chapter, current_verse, bible_data, finishes_at_end_of_chapter=False):
     new_chapter = current_chapter + chapter_difference
     if new_chapter > bible_data.number_chapters[current_book_n]:
@@ -577,9 +596,6 @@ def delta_verse(verse_difference, current_book_n, current_chapter, current_verse
     else:
         return (current_book_n, current_chapter, new_verse)
 
-
-
-# === Internal functions ===
 
 class MCBGroup(object):
     """
