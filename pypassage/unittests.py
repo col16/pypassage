@@ -349,28 +349,28 @@ class TestPassageDelta(unittest.TestCase):
 
 class TestPassageLookup(unittest.TestCase):
     def test_esv(self):
-        self.assertEqual(bd.get_passage_text(P('Gen',1,1))[0], '   In the beginning, God created the heavens and the earth.')
-        self.assertEqual(bd.get_passage_text(P('Gen',1,1),options={"include-passage-references":"true"})[0], 'Genesis 1:1\n   In the beginning, God created the heavens and the earth.')
-        self.assertEqual(bd.get_passage_text(P('Gen',1,1))[0], '   In the beginning, God created the heavens and the earth.') #repeated, just to make sure cache didn't remember previous options
+        self.assertEqual(P('Gen',1,1).text()[0], '   In the beginning, God created the heavens and the earth.')
+        self.assertEqual(P('Gen',1,1).text(options={"include-passage-references":"true"})[0], 'Genesis 1:1\n   In the beginning, God created the heavens and the earth.')
+        self.assertEqual(P('Gen',1,1).text()[0], '   In the beginning, God created the heavens and the earth.') #repeated, just to make sure cache didn't remember previous options
     def test_cache(self):
         #Initialise cache, setting total-consecutive-verse limit to 500 and proportion-of-book limit to 0.5
         book_limits = dict([(k,v*0.5) for (k,v) in bd.number_verses_in_book.items()])
         sc = text_cache.SimpleCache(500, book_limits)
         #Testing using Genesis, which has 1533 verses in it. 50% of book is 766 verses.
         #This should put 31 verses into cache
-        (p,t) = bd.get_passage_text(P('Genesis',1), cache=sc)
+        (p,t) = P('Genesis',1).text(cache=sc)
         self.assertEqual(len(sc.cache),1)
         self.assertEqual(t,False) #passage should not have been tuncated
         #Add another 25 verses into cache (just checking normal behaviour)
-        (p,t) = bd.get_passage_text(P('Genesis',2), cache=sc)
+        (p,t) = P('Genesis',2).text(cache=sc)
         self.assertEqual(len(sc.cache),2)
         self.assertEqual(t,False)
         #Now add a long passage: 711 verses. This should be truncated to 500 verses, and thus allow us to add another 210 verses to the cache. If it's not truncated however it will push us one verse over the 50% of book limit.
-        (p,t) = bd.get_passage_text(P('Genesis',3,1,27,39), cache=sc)
+        (p,t) = P('Genesis',3,1,27,39).text(cache=sc)
         self.assertEqual(t,True) #passage should have been truncated
         self.assertEqual(len(sc.cache),3)
         #Now add something that should push two references out of the cache
-        (p,t) = bd.get_passage_text(P('Genesis',27,40,34,28), cache=sc)
+        (p,t) = P('Genesis',27,40,34,28).text(cache=sc)
         self.assertEqual(len(sc.cache),2)
         self.assertEqual(t,False)
 

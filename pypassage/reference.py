@@ -270,7 +270,10 @@ class Passage(object):
                bibledata.osis.normative_book_names[self.start_book_n] + "." + str(self.end_chapter) + "." + str(self.end_verse)
     
     def text(self, **kwargs):
-        """ Return the Bible text for this passage. """
+        """
+        Return the Bible text for this passage, AND a boolean indicating
+        whether passage was shortened to comply with API conditions.
+        """
         return self.bd.get_passage_text(self, **kwargs)
 
     def __str__(self):
@@ -412,7 +415,10 @@ class PassageCollection(list):
         return "; ".join(group_strings)
     
     def text(self, **kwargs):
-        """ Return the Bible text for these passages. """
+        """
+        Return the Bible text for these passages, AND a boolean indicating
+        whether passage was shortened to comply with API conditions.
+        """
         return "\n\n".join([p.bd.get_passage_text(self, **kwargs) for p in self])
 
     def __add__(self,other):
