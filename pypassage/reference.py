@@ -146,7 +146,8 @@ class Passage(object):
 
         Arguments:
         number_verses -- Maximum number of verses that passage may be
-        proportion_of_book -- Maximum proportion of book that passage may be
+        proportion_of_book -- Maximum proportion of book that passage may be;
+            measured in terms of number of verses.
 
         For example:
         >>> Passage('Gen').truncate(number_verses=150)
@@ -159,7 +160,8 @@ class Passage(object):
         if number_verses != None:
             if number_verses < limit: limit = number_verses
         if proportion_of_book != None:
-            verses = int(proportion_of_book * self.book_total_verses())
+            from math import ceil
+            verses = int(ceil(proportion_of_book * self.book_total_verses()))
             if verses < limit: limit = verses
         if current_length <= limit:
             #No need to shorten; return as-is.

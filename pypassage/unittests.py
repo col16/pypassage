@@ -52,9 +52,6 @@ class TestPassage(unittest.TestCase):
         self.assertEqual(P(book='GEN', start_chapter=1, start_verse=1, end_chapter=2, end_verse=1), P(1,1,1,2,1))
         self.assertEqual(P(book='GEN', start_chapter=1, start_verse=1, end_book='REV', end_chapter=1, end_verse=1).is_valid(), True)
 
-    #Testing of passage if parameters changed manually
-    # esp wrt book_n and start_book_n
-
     #Testing passage normalisation
     def test_multi_chapter_books(self):
         self.assertEqual(P(book='GEN', start_chapter=2, start_verse=6, end_chapter=3, end_verse=5).is_valid(), True)
@@ -85,6 +82,21 @@ class TestPassage(unittest.TestCase):
         self.assertEqual(P(book='PHM', start_verse=6), P(book='PHM', start_verse=6, end_verse=6))
         self.assertEqual(P(book='PHM',end_verse=9), P(book='PHM', start_verse=1, end_verse=9))
         self.assertEqual(P(book='PHM'), P(book='PHM', start_verse=1, end_verse=25))
+
+    #Testing of passage if parameters changed manually
+    def test_manual_change(self):
+        p = P('Gen',1,1)
+        #Change end verse
+        p.end_verse = 3
+        self.assertEqual(p, P('Gen',1,1,1,3))
+        #Change book
+        p.start_book_n = 2
+        self.assertEqual(p, P('Exo',1,1,1,3))
+        p.book_n = 3 #Deprecated version of start_book_n
+        self.assertEqual(p, P('Lev',1,1,1,3))
+        #Change start_chapter in a way that would make passage invalid
+        p.start_chapter = 4
+        self.assertEqual(p.is_valid(), False)
 
     #Testing correction of fixable errors
     def test_fixable(self):
@@ -200,9 +212,26 @@ class TestPassage(unittest.TestCase):
                          
     #Test passage truncation
     def test_trucation(self):
-        self.assertEqual(P('Mar', 9, 1, 9, 50).truncate(number_verses=44), P(book=41, start_chapter=9, start_verse=1, end_chapter=9, end_verse=45))
-        self.assertEqual(P('Mar', 9, 1, 9, 50).truncate(proportion_of_book = 45./673), P(book=41, start_chapter=9, start_verse=1, end_chapter=9, end_verse=47))
-        self.assertEqual(P('Gen').truncate(proportion_of_book = 0.5), P('Gen',1,1,27,38))
+        #John 1 has 51 verses; truncate to 40
+        j1t = P('Joh',1).truncate(number_verses=40)
+        self.assertEqual(len(j1t), 40)
+        self.assertEqual(j1t, P('Joh',1,1,1,40))
+        #John 1-2 is 76 verses total; truncate to 60 (i.e. finishing at 2:9)
+        j12t = P('Joh',start_chapter=1,end_chapter=2).truncate(number_verses=60)
+        self.assertEqual(len(j12t), 60)
+        self.assertEqual(j12t, P('Joh',1,1,2,9))
+        #John has 878 verses. Truncate to 50% (439 verses)
+        jt = P('Joh').truncate(proportion_of_book=0.5)
+        self.assertEqual(len(jt), 439)
+        self.assertEqual(jt, P('Joh',1,1,10,3))
+        #Mark has 673 verses. Truncate to 50%, which should be rounded UP to 337 verses.
+        mt = P('Mar').truncate(proportion_of_book=0.5)
+        self.assertEqual(len(mt), 337)
+        self.assertEqual(mt, P('Mar',1,1,9,15))
+        #Truncate Mark to 50 verses (finishing 2:5), but provide number as proportion-of-book
+        m50 = P('Mar').truncate(proportion_of_book=50./673)
+        self.assertEqual(len(m50), 50)
+        self.assertEqual(m50, P('Mar',1,1,2,5))
 
 
 class TestPassageCollection(unittest.TestCase):
