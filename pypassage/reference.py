@@ -112,22 +112,41 @@ class Passage(object):
     def number_verses(self):
         """ Return number of verses in this passage. """
         if not self.is_valid(): return 0
-        if self.start_chapter == self.end_chapter:
+        if self.start_book_n == self.end_book_n and self.start_chapter == self.end_chapter:
+            #Passsage spans just one chapter in one book
             n = self.end_verse - self.start_verse + 1
             missing = self.bd.missing_verses.get((self.start_book_n,self.start_chapter),[])
             for verse in missing:
                 if verse >= self.start_verse and verse <= self.end_verse: n -= 1
             return n
         else:
-            n = self.end_verse + (self.bd.last_verses[self.start_book_n,self.start_chapter] - self.start_verse + 1)
-            for chapter in range(self.start_chapter+1,self.end_chapter):
-                n += self.bd.last_verses[self.start_book_n,chapter] - len(self.bd.missing_verses.get((self.start_book_n,chapter),[]))
+            #Passage spans multiple chapters or books
+            #Verses from end chapter
+            n = self.end_verse
+            missing_end = self.bd.missing_verses.get((self.end_book_n,self.end_chapter),[])
+            for verse in missing_end:
+                if verse <= self.end_verse: n -= 1
+            #Verses from start chapter
+            n += (self.bd.last_verses[self.start_book_n,self.start_chapter] - self.start_verse + 1)
             missing_start = self.bd.missing_verses.get((self.start_book_n,self.start_chapter),[])
             for verse in missing_start:
                 if verse >= self.start_verse: n -= 1
-            missing_end = self.bd.missing_verses.get((self.start_book_n,self.end_chapter),[])
-            for verse in missing_end:
-                if verse <= self.end_verse: n -= 1
+            #Verses from in-between chapters
+            if self.start_book_n == self.end_book_n:
+                #Single-book reference
+                for chapter in range(self.start_chapter+1,self.end_chapter):
+                    n += self.bd.last_verses[self.start_book_n,chapter] - len(self.bd.missing_verses.get((self.start_book_n,chapter),[]))
+            else:
+                #Verses from intermediate chapters in end book
+                for chapter in range(1,self.end_chapter):
+                    n += self.bd.last_verses[self.end_book_n,chapter] - len(self.bd.missing_verses.get((self.end_book_n,chapter),[]))
+                #Verses from intermediate chapters in start book
+                for chapter in range(self.start_chapter+1, self.bd.number_chapters[self.start_book_n]+1):
+                    n += self.bd.last_verses[self.start_book_n,chapter] - len(self.bd.missing_verses.get((self.start_book_n,chapter),[]))
+                #Verses from chapters in intermediate books
+                for book in range(self.start_book_n+1,self.end_book_n):
+                    for chapter in range(1,self.bd.number_chapters[book]+1):
+                        n += self.bd.last_verses[book,chapter] - len(self.bd.missing_verses.get((book,chapter),[]))
             return n
         
     def proportion_of_book(self):

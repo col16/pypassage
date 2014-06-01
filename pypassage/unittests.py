@@ -187,18 +187,28 @@ class TestPassage(unittest.TestCase):
         self.assertEqual(str(P(book='PSA', start_chapter=21, start_verse=1)), "Psalm 21:1") #Psalm, singular
         self.assertEqual(str(P(book='PSA', start_chapter=21, end_chapter=22)), "Psalms 21-22") #Psalms, plural
 
-    def test_passage_strings(self):
-        self.assertEqual(P(book='GEN', start_chapter=1, start_verse=1, end_chapter=1, end_verse=2).osisRef(), "Gen.1.1-Gen.1.2")
+    def test_osis_passage_strings(self):
+        self.assertEqual(P('GEN',1,1,1,2).osisRef(), "Gen.1.1-Gen.1.2")
     
     #Testing number of verses within passage
     def test_number_verses(self):
-        self.assertEqual(len(P(book='GEN', start_chapter=1, start_verse=1, end_chapter=1, end_verse=3)), 3)
-        self.assertEqual(len(P(book='GEN', start_chapter=1, start_verse=1, end_chapter=2, end_verse=1)), 32)        
-        self.assertEqual(len(P(book='GEN', start_chapter=1, start_verse=1, end_chapter=20, end_verse=18)), 514)
-    def test_number_verses_with_missing_verses_in_middle(self):
-        self.assertEqual(len(P(book='MAT', start_chapter=12, start_verse=46, end_chapter=12, end_verse=48)), 2)
-        self.assertEqual(len(P(book='MAR', start_chapter=9, start_verse=1, end_chapter=9, end_verse=45)), 44)
-        self.assertEqual(len(P(book='MAR', start_chapter=7, start_verse=15, end_chapter=12, end_verse=1)), 193)
+        #Single verse
+        self.assertEqual(len(P('GEN',1,1,1,1)), 1)
+        #Within same chapter
+        self.assertEqual(len(P('GEN',1,1,1,3)), 3)
+        #Consecutive chapters
+        self.assertEqual(len(P('GEN',1,1,2,1)), 32)
+        #More than two chapters
+        self.assertEqual(len(P('GEN',1,30,3,2)), 29)
+        #Intermediate single-chapter book
+        self.assertEqual(len(P('1Jo',5,20,1,2,'3Jo')), 17)
+        #Intermediate multi-chapter book
+        self.assertEqual(len(P('Heb',12,28,2,2,'1Pe')), 162)
+    def test_number_verses_with_missing_verses(self):
+        self.assertEqual(len(P('MAT',12,46,12,48)), 2)
+        self.assertEqual(len(P('MAR',9,1,9,45)), 44)
+        self.assertEqual(len(P('MAR',7,15,12,1)), 193)
+        self.assertEqual(len(P('Joh',21,24,1,2,'Rom')), 1007) #All of Acts
 
     #Proportion of book
     def test_proportion_of_book(self):
