@@ -118,6 +118,10 @@ class TestPassage(unittest.TestCase):
             self.fail("P('Gen',1,5,1,1) should have raised exception")
         except InvalidPassageException: pass
         try:
+            P('Exo',1,1,1,1,'Gen') #end_book is before start_book
+            self.fail("P('Exo',1,1,1,1,'Gen') should have raised exception")
+        except InvalidPassageException: pass
+        try:
             P('Gen',51) #start_chapter is past end of book
             self.fail("P('Gen',51) should have raised exception")
         except InvalidPassageException: pass

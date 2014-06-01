@@ -78,25 +78,34 @@ class Passage(object):
         Return boolean denoting whether this Passage object is a valid reference or not. Note that while object
         always ensures passage is valid when it is instantiated, it may have been made invalid at a later time.
         """
-        #Does book exist?
+        #Does start book exist?
         if isinstance(self.start_book_n, int):
             if self.start_book_n > 66 or self.start_book_n < 1:
                 return False
         else: return False
+        #What about end book?
+        if isinstance(self.end_book_n, int):
+            if self.end_book_n < self.start_book_n or self.end_book_n > 66:
+                return False
+        else: return False
         #Are start_chapter, start_verse, end_chapter, and end_verse all integers?
         if not isinstance(self.start_chapter,int) or not isinstance(self.start_verse,int) or not isinstance(self.end_chapter,int) or not isinstance(self.end_verse,int): return False
-        #Is end after start?
-        if self.start_chapter > self.end_chapter:
+        #Do start/end chapter/verse exist?
+        if self.start_chapter < 1 or self.start_verse < 1 or self.end_chapter < 1 or self.end_verse < 1:
             return False
-        elif self.start_chapter == self.end_chapter:
-            if self.end_verse < self.start_verse: return False
-        #Do end chapter/verse and start verse exist?
-        if self.bd.number_chapters[self.start_book_n] < self.end_chapter: return False
-        if self.bd.last_verses[self.start_book_n, self.end_chapter] < self.end_verse: return False
+        if self.bd.number_chapters[self.start_book_n] < self.start_chapter: return False
+        if self.bd.number_chapters[self.end_book_n] < self.end_chapter: return False
         if self.bd.last_verses[self.start_book_n, self.start_chapter] < self.start_verse: return False
+        if self.bd.last_verses[self.end_book_n, self.end_chapter] < self.end_verse: return False
+        #Is end after start?
+        if self.start_book_n == self.end_book_n:
+            if self.start_chapter > self.end_chapter:
+                return False
+            elif self.start_chapter == self.end_chapter:
+                if self.end_verse < self.start_verse: return False
         #Are either start or end verses missing verses?
         if self.start_verse in self.bd.missing_verses.get((self.start_book_n, self.start_chapter),[]): return False
-        if self.end_verse in self.bd.missing_verses.get((self.start_book_n, self.end_chapter),[]): return False
+        if self.end_verse in self.bd.missing_verses.get((self.end_book_n, self.end_chapter),[]): return False
         #Everything checked; return True
         return True
     
