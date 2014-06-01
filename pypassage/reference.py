@@ -151,7 +151,7 @@ class Passage(object):
         
     def proportion_of_book(self):
         """ Return proportion of current book represented by this passage. """
-        return len(self)/float(self.book_total_verses())
+        return len(self)/float(book_total_verses(self.start_book_n, self.bd))
 
     def complete_book(self):
         """ Return True if this reference is for a whole book. """
@@ -189,7 +189,7 @@ class Passage(object):
             if number_verses < limit: limit = number_verses
         if proportion_of_book != None:
             from math import ceil
-            verses = int(ceil(proportion_of_book * self.book_total_verses()))
+            verses = int(ceil(proportion_of_book * book_total_verses(self.start_book_n, self.bd)))
             if verses < limit: limit = verses
         if current_length <= limit:
             #No need to shorten; return as-is.
@@ -234,7 +234,7 @@ class Passage(object):
         if number_verses != None:
             if number_verses > limit: limit = number_verses
         if proportion_of_book != None:
-            verses = int(proportion_of_book * self.book_total_verses())
+            verses = int(proportion_of_book * book_total_verses(self.start_book_n, self.bd))
             if verses > limit: limit = verses
         if current_length >= limit:
             #No need to extend; return as-is.
@@ -245,13 +245,6 @@ class Passage(object):
             end_verse = self.bd.last_verses[self.start_book_n, end_chapter]
             return Passage(self.start_book_n, self.start_chapter, self.start_verse, end_chapter, end_verse).truncate(number_verses=limit)
         
-    def book_total_verses(self):
-        """ Return total number of verses in current book. """
-        verses = 0
-        for chapter in range(1,self.bd.number_chapters[self.start_book_n]+1):
-            verses += self.bd.last_verses[self.start_book_n,chapter] - len(self.bd.missing_verses.get((self.start_book_n,chapter),[]))
-        return verses
-    
     def book_name(self, abbreviated = False):
         """ Return full or abbreviated book name. """
         if abbreviated:
@@ -607,6 +600,14 @@ def get_passage_text(passage, **kwargs):
 
 
 # === Internal functions ===
+def book_total_verses(book_n, bible_data):
+    """ Return total number of verses in current book. """
+    verses = 0
+    for chapter in range(1, bible_data.number_chapters[book_n]+1):
+        verses += bible_data.last_verses[book_n,chapter] - len(bible_data.missing_verses.get((book_n,chapter),[]))
+    return verses
+
+
 def delta_chapter(chapter_difference, current_book_n, current_chapter, current_verse, bible_data, finishes_at_end_of_chapter=False):
     new_chapter = current_chapter + chapter_difference
     if new_chapter > bible_data.number_chapters[current_book_n]:

@@ -5,6 +5,7 @@ PassageDelta class added
 Multi-book support added. New 'end_book' optional parameter for Passage initialisation function.
 Added Passage.text and PassageCollection.text functions
 Deprecated get_passage_text function
+Removed book_total_verses function from Passage object and made it stand-alone
 To do:
   Deprecate Passage.extend function
   Add tests for Passage.text and PassageCollection.text functions
