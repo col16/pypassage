@@ -196,12 +196,15 @@ class TestPassage(unittest.TestCase):
         self.assertEqual(len(P('GEN',1,1,1,1)), 1)
         #Within same chapter
         self.assertEqual(len(P('GEN',1,1,1,3)), 3)
+        self.assertEqual(P('GEN',1,1,1,3).number_verses(per_book=True), {1:3})
         #Consecutive chapters
         self.assertEqual(len(P('GEN',1,1,2,1)), 32)
+        self.assertEqual(P('GEN',1,1,2,1).number_verses(per_book=True), {1:32})
         #More than two chapters
         self.assertEqual(len(P('GEN',1,30,3,2)), 29)
         #Intermediate single-chapter book
         self.assertEqual(len(P('1Jo',5,20,1,2,'3Jo')), 17)
+        self.assertEqual(P('1Jo',5,20,1,2,'3Jo').number_verses(per_book=True), {62: 2, 63: 13, 64: 2})
         #Intermediate multi-chapter book
         self.assertEqual(len(P('Heb',12,28,2,2,'1Pe')), 162)
     def test_number_verses_with_missing_verses(self):
@@ -246,6 +249,7 @@ class TestPassage(unittest.TestCase):
         m50 = P('Mar').truncate(proportion_of_book=50./673)
         self.assertEqual(len(m50), 50)
         self.assertEqual(m50, P('Mar',1,1,2,5))
+        #To Do: tests for multi-book passages
 
 
 class TestPassageCollection(unittest.TestCase):

@@ -109,49 +109,72 @@ class Passage(object):
         #Everything checked; return True
         return True
     
-    def number_verses(self):
-        """ Return number of verses in this passage. """
-        if not self.is_valid(): return 0
+    def number_verses(self, per_book=False):
+        """
+        Return number of verses in this passage as integer, or if per_book=True,
+        as a dictionary keyed to book_n.
+        """
+        if not self.is_valid():
+            return {} if per_book else 0
+
         if self.start_book_n == self.end_book_n and self.start_chapter == self.end_chapter:
             #Passsage spans just one chapter in one book
             n = self.end_verse - self.start_verse + 1
             missing = self.bd.missing_verses.get((self.start_book_n,self.start_chapter),[])
             for verse in missing:
                 if verse >= self.start_verse and verse <= self.end_verse: n -= 1
-            return n
+            if per_book:
+                return {self.start_book_n: n}
+            else:
+                return n
         else:
             #Passage spans multiple chapters or books
+            n_book = defaultdict(lambda: 0)
             #Verses from end chapter
-            n = self.end_verse
+            n_book[self.end_book_n] += self.end_verse
             missing_end = self.bd.missing_verses.get((self.end_book_n,self.end_chapter),[])
             for verse in missing_end:
-                if verse <= self.end_verse: n -= 1
+                if verse <= self.end_verse: n_book[self.end_book_n] -= 1
             #Verses from start chapter
-            n += (self.bd.last_verses[self.start_book_n,self.start_chapter] - self.start_verse + 1)
+            n_book[self.start_book_n] += (self.bd.last_verses[self.start_book_n,self.start_chapter] - self.start_verse + 1)
             missing_start = self.bd.missing_verses.get((self.start_book_n,self.start_chapter),[])
             for verse in missing_start:
-                if verse >= self.start_verse: n -= 1
+                if verse >= self.start_verse: n_book[self.start_book_n] -= 1
             #Verses from in-between chapters
             if self.start_book_n == self.end_book_n:
                 #Single-book reference
                 for chapter in range(self.start_chapter+1,self.end_chapter):
-                    n += self.bd.last_verses[self.start_book_n,chapter] - len(self.bd.missing_verses.get((self.start_book_n,chapter),[]))
+                    n_book[self.start_book_n] += self.bd.last_verses[self.start_book_n,chapter] - len(self.bd.missing_verses.get((self.start_book_n,chapter),[]))
             else:
                 #Verses from intermediate chapters in end book
                 for chapter in range(1,self.end_chapter):
-                    n += self.bd.last_verses[self.end_book_n,chapter] - len(self.bd.missing_verses.get((self.end_book_n,chapter),[]))
+                    n_book[self.end_book_n] += self.bd.last_verses[self.end_book_n,chapter] - len(self.bd.missing_verses.get((self.end_book_n,chapter),[]))
                 #Verses from intermediate chapters in start book
                 for chapter in range(self.start_chapter+1, self.bd.number_chapters[self.start_book_n]+1):
-                    n += self.bd.last_verses[self.start_book_n,chapter] - len(self.bd.missing_verses.get((self.start_book_n,chapter),[]))
+                    n_book[self.start_book_n] += self.bd.last_verses[self.start_book_n,chapter] - len(self.bd.missing_verses.get((self.start_book_n,chapter),[]))
                 #Verses from chapters in intermediate books
                 for book in range(self.start_book_n+1,self.end_book_n):
                     for chapter in range(1,self.bd.number_chapters[book]+1):
-                        n += self.bd.last_verses[book,chapter] - len(self.bd.missing_verses.get((book,chapter),[]))
-            return n
+                        n_book[book] += self.bd.last_verses[book,chapter] - len(self.bd.missing_verses.get((book,chapter),[]))
+            if per_book:
+                return n_book
+            else:
+                return sum([v for b,v in n_book.items()])
         
-    def proportion_of_book(self):
-        """ Return proportion of current book represented by this passage. """
-        return len(self)/float(book_total_verses(self.start_book_n, self.bd))
+    def proportion_of_book(self, per_book=False):
+        """
+        Return proportion of current book represented by this passage, or if per_book=True,
+        a dictionary of proportions keyed to book_n.
+        """
+        length_perbook = self.number_verses(per_book=True)
+        total_perbook = book_total_verses(self.bd, self.start_book_n, self.end_book_n)
+        proportions = {}
+        for (book_n, n) in length_perbook.items():
+            proportions[book_n] = float(n)/total_perbook[book_n]
+        if per_book:
+            return proportions
+        else:
+            return sum([p for b,p in proportions.items()])
 
     def complete_book(self):
         """ Return True if this reference is for a whole book. """
@@ -189,8 +212,19 @@ class Passage(object):
             if number_verses < limit: limit = number_verses
         if proportion_of_book != None:
             from math import ceil
-            verses = int(ceil(proportion_of_book * book_total_verses(self.start_book_n, self.bd)))
-            if verses < limit: limit = verses
+            length_perbook = self.number_verses(per_book=True)
+            total_perbook = book_total_verses(self.bd, self.start_book_n, self.end_book_n)
+            v = 0
+            #Iterate through all books in this passage, to check that all books
+            #satisfy proportion_of_book constraint. Limit is in first book that
+            #violates constraint.
+            for book_n in range(self.start_book_n, self.end_book_n+1):
+                if length_perbook[book_n] <= proportion_of_book * total_perbook[book_n]:
+                    v += length_perbook[book_n]
+                else:
+                    v += int(ceil(proportion_of_book * total_perbook[book_n]))
+                    break
+            if v < limit: limit = v
         if current_length <= limit:
             #No need to shorten; return as-is.
             return self
@@ -226,6 +260,7 @@ class Passage(object):
         Passage(book=1, start_chapter=1, start_verse=1, end_chapter=27, end_verse=38)
         
         """
+        print "Deprecated function; does not understand multi-book passages. Use PassageDelta object instead."
         #First check if starting reference is valid:
         if (self.start_book_n > 66 or self.start_book_n < 1) or (self.start_chapter < 1 or self.start_chapter > self.bd.number_chapters[self.start_book_n]) or (self.start_verse < 1 or self.start_verse > self.bd.last_verses[self.start_book_n, self.start_chapter]): return None
         #Check current length and length of limits
@@ -234,7 +269,7 @@ class Passage(object):
         if number_verses != None:
             if number_verses > limit: limit = number_verses
         if proportion_of_book != None:
-            verses = int(proportion_of_book * book_total_verses(self.start_book_n, self.bd))
+            verses = int(proportion_of_book * book_total_verses(self.bd, self.start_book_n))
             if verses > limit: limit = verses
         if current_length >= limit:
             #No need to extend; return as-is.
@@ -600,12 +635,18 @@ def get_passage_text(passage, **kwargs):
 
 
 # === Internal functions ===
-def book_total_verses(book_n, bible_data):
-    """ Return total number of verses in current book. """
-    verses = 0
-    for chapter in range(1, bible_data.number_chapters[book_n]+1):
-        verses += bible_data.last_verses[book_n,chapter] - len(bible_data.missing_verses.get((book_n,chapter),[]))
-    return verses
+def book_total_verses(bible_data, start_book_n, end_book_n=None):
+    """
+    Return total number of verses in book or book range,
+    as a dictionary keyed book to book_n
+    """
+    if end_book_n == None:
+        end_book_n = start_book_n
+    total_verses = defaultdict(lambda: 0)
+    for book_n in range(start_book_n, end_book_n+1):
+        for chapter in range(1, bible_data.number_chapters[book_n]+1):
+            total_verses[book_n] += bible_data.last_verses[book_n,chapter] - len(bible_data.missing_verses.get((book_n,chapter),[]))
+    return total_verses
 
 
 def delta_chapter(chapter_difference, current_book_n, current_chapter, current_verse, bible_data, finishes_at_end_of_chapter=False):
