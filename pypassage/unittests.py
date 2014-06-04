@@ -237,7 +237,7 @@ class TestPassage(unittest.TestCase):
         j12t = P('Joh',start_chapter=1,end_chapter=2).truncate(number_verses=60)
         self.assertEqual(len(j12t), 60)
         self.assertEqual(j12t, P('Joh',1,1,2,9))
-        #John has 878 verses. Truncate to 50% (439 verses)
+        #John has 878 verses, after accounting for one missing verse. Truncate to 50% (439 verses)
         jt = P('Joh').truncate(proportion_of_book=0.5)
         self.assertEqual(len(jt), 439)
         self.assertEqual(jt, P('Joh',1,1,10,3))
@@ -249,7 +249,24 @@ class TestPassage(unittest.TestCase):
         m50 = P('Mar').truncate(proportion_of_book=50./673)
         self.assertEqual(len(m50), 50)
         self.assertEqual(m50, P('Mar',1,1,2,5))
-        #To Do: tests for multi-book passages
+
+        #Multi-book passage tests
+        #Matthew 28 has 20 verses and Mark 1 has 45 verses. Truncate to 30 verses.
+        multi1 = P('Mat',28,1,1,45,'Mar').truncate(number_verses=30)
+        self.assertEqual(len(multi1),30)
+        self.assertEqual(multi1, P('Mat',28,1,1,10,'Mar'))
+        #Mat 28 is significantly less than 50% of the book of Matthew. But adding the
+        #whole book of Mark and truncating the total passage to 50% should truncate it
+        #at the half-way point through Mark.
+        markt = P('Mar').truncate(proportion_of_book=0.5)
+        multi2 = P('Mat',28,1,16,20,'Mar').truncate(proportion_of_book=0.5)
+        self.assertEqual(markt.end_book_n, multi2.end_book_n)
+        self.assertEqual(markt.end_chapter, multi2.end_chapter)
+        self.assertEqual(markt.end_verse, multi2.end_verse)
+        #Luke 24 has 53 verses, the book of John has 878 verses, and Acts 1 has 26
+        #verses (957 verses total). Truncate to 940 verses long.
+        multi3 = P('Luk',24,1,1,26,'Act').truncate(number_verses=940)
+        self.assertEqual(multi3, P('Luk',24,1,1,9,'Act'))
 
 
 class TestPassageCollection(unittest.TestCase):

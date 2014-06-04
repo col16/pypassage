@@ -231,22 +231,31 @@ class Passage(object):
         else:
             #Check that we're non-negative
             if limit < 1: return None
-            #We need to shorten this passage. Iterate through passages until we've reached our quota of verses.
+            #We need to shorten this passage. Iterate through chapters until we've reached our quota of verses.
             n = 0
-            for chapter in range(self.start_chapter, self.end_chapter+1):
-                if chapter == self.start_chapter:
-                    start_verse = self.start_verse
+            for book_n in range(self.start_book_n, self.end_book_n+1):
+                if book_n == self.start_book_n:
+                    start_chapter = self.start_chapter
                 else:
-                    start_verse = 1
-                if chapter == self.end_chapter:
-                    end_verse = self.end_verse
+                    start_chapter = 1
+                if book_n == self.end_book_n:
+                    end_chapter = self.end_chapter
                 else:
-                    end_verse = self.bd.last_verses[self.start_book_n, chapter]
-                valid_verses = [v for v in range(start_verse, end_verse+1) if v not in self.bd.missing_verses.get((self.start_book_n, chapter),[]) ]
-                if n + len(valid_verses) >= limit:
-                    return Passage(self.start_book_n, self.start_chapter, self.start_verse, chapter, valid_verses[limit-n-1])
-                else:
-                    n += len(valid_verses)
+                    end_chapter = self.bd.number_chapters[book_n] 
+                for chapter in range(start_chapter, end_chapter+1):
+                    if book_n == self.start_book_n and chapter == self.start_chapter:
+                        start_verse = self.start_verse
+                    else:
+                        start_verse = 1
+                    if book_n == self.end_book_n and chapter == self.end_chapter:
+                        end_verse = self.end_verse
+                    else:
+                        end_verse = self.bd.last_verses[book_n, chapter]
+                    valid_verses = [v for v in range(start_verse, end_verse+1) if v not in self.bd.missing_verses.get((book_n, chapter),[]) ]
+                    if n + len(valid_verses) >= limit:
+                        return Passage(self.start_book_n, self.start_chapter, self.start_verse, chapter, valid_verses[limit-n-1], book_n)
+                    else:
+                        n += len(valid_verses)
             #If we've got through the loop and haven't returned a Passage object, something's gone amiss.
             raise Exception("Got to end_verse and still hadn't reached current_length!")
         
