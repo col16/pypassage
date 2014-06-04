@@ -178,7 +178,8 @@ class Passage(object):
 
     def complete_book(self):
         """ Return True if this reference is for a whole book. """
-        return (self.start_chapter == self.start_verse == 1 and
+        return (self.start_book_n == self.end_book_n and
+                self.start_chapter == self.start_verse == 1 and
                 self.end_chapter == self.bd.number_chapters[self.start_book_n] and
                 self.end_verse   == self.bd.last_verses[self.start_book_n, self.end_chapter])
     
@@ -187,9 +188,10 @@ class Passage(object):
         Return True if this reference is for a (single) whole chapter.
         Alternatively, if multiple=True, this returns true if reference is for any number of whole chapters.
         """
+        single_chapter = (self.start_book_n == self.end_book_n and self.start_chapter == self.end_chapter)
         return (self.start_verse == 1 and
-                (multiple == True or self.start_chapter == self.end_chapter) and
-                self.end_verse == self.bd.last_verses[self.start_book_n, self.end_chapter])
+                (multiple == True or single_chapter) and
+                self.end_verse == self.bd.last_verses[self.end_book_n, self.end_chapter])
 
     def truncate(self, number_verses=None, proportion_of_book=None):
         """
