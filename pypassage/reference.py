@@ -291,43 +291,59 @@ class Passage(object):
             end_verse = self.bd.last_verses[self.start_book_n, end_chapter]
             return Passage(self.start_book_n, self.start_chapter, self.start_verse, end_chapter, end_verse).truncate(number_verses=limit)
         
-    def book_name(self, abbreviated = False):
-        """ Return full or abbreviated book name. """
-        if abbreviated:
-            return self.bd.book_names[self.start_book_n][2]
-        else:
-            if self.start_book_n == 19 and self.start_chapter == self.end_chapter:
-                return "Psalm"
-            else:
-                return self.bd.book_names[self.start_book_n][1]
-            
     def reference_string(self, abbreviated = False, dash = "-"):
         """ Return string representation of passage reference. """
         if not self.is_valid(): return 'Invalid passage'
-        if self.bd.number_chapters[self.start_book_n] == 1:
-            if self.start_verse == self.end_verse:
-                return self.book_name(abbreviated) + " " + str(self.start_verse)
-            elif self.start_verse == 1 and self.end_verse == self.bd.last_verses[self.start_book_n, 1]:
-                return self.book_name(abbreviated)
-            else:
-                return self.book_name(abbreviated) + " " + str(self.start_verse) + dash + str(self.end_verse)
-        else:
-            if self.start_chapter == self.end_chapter:
+        #Create string
+        if self.start_book_n == self.end_book_n:
+            #Single-book passage
+            book_n = self.start_book_n
+            if self.bd.number_chapters[book_n] == 1:
+                #Single-chapter book
+                book = book_name(self.bd, book_n, abbreviated)
                 if self.start_verse == self.end_verse:
-                    return self.book_name(abbreviated) + " " + str(self.start_chapter) + ":" + str(self.start_verse)
-                elif self.start_verse == 1 and self.end_verse == self.bd.last_verses[self.start_book_n, self.start_chapter]:
-                    return self.book_name(abbreviated) + " " + str(self.start_chapter)
+                    return book + " " + str(self.start_verse)
+                elif self.start_verse == 1 and self.end_verse == self.bd.last_verses[book_n, 1]:
+                    return book
                 else:
-                    return self.book_name(abbreviated) + " " + str(self.start_chapter) + ":" + str(self.start_verse) + dash + str(self.end_verse)
+                    return book + " " + str(self.start_verse) + dash + str(self.end_verse)
             else:
-                if self.start_verse == 1 and self.end_verse == self.bd.last_verses[self.start_book_n, self.end_chapter]:
-                    if self.start_chapter == 1 and self.end_chapter == self.bd.number_chapters[self.start_book_n]:
-                        return self.book_name(abbreviated)
+                #Multi-chapter book
+                if self.start_chapter == self.end_chapter:
+                    if book_n == 19:
+                        book = book_name(self.bd, book_n, abbreviated, True)
                     else:
-                        return self.book_name(abbreviated) + " " + str(self.start_chapter) + dash + str(self.end_chapter)
+                        book = book_name(self.bd, book_n, abbreviated)
+                    if self.start_verse == self.end_verse:
+                        return book + " " + str(self.start_chapter) + ":" + str(self.start_verse)
+                    elif self.start_verse == 1 and self.end_verse == self.bd.last_verses[book_n, self.start_chapter]:
+                        return book + " " + str(self.start_chapter)
+                    else:
+                        return book + " " + str(self.start_chapter) + ":" + str(self.start_verse) + dash + str(self.end_verse)
                 else:
-                    return self.book_name(abbreviated) + " " + str(self.start_chapter) + ":" + str(self.start_verse) + dash + str(self.end_chapter) + ":" + str(self.end_verse)
-    
+                    book = book_name(self.bd, book_n, abbreviated)
+                    if self.start_verse == 1 and self.end_verse == self.bd.last_verses[book_n, self.end_chapter]:
+                        if self.start_chapter == 1 and self.end_chapter == self.bd.number_chapters[book_n]:
+                            return book
+                        else:
+                            return book + " " + str(self.start_chapter) + dash + str(self.end_chapter)
+                    else:
+                        return book + " " + str(self.start_chapter) + ":" + str(self.start_verse) + dash + str(self.end_chapter) + ":" + str(self.end_verse)
+        else:
+            first_book = book_name(self.bd, self.start_book_n, abbreviated)
+            last_book = book_name(self.bd, self.end_book_n, abbreviated)
+            if self.start_verse == 1 and self.end_verse == self.bd.last_verses[self.end_book_n, self.end_chapter]:
+                if self.end_chapter == self.bd.number_chapters[self.end_book_n]:
+                    #Whole books
+                    return first_book + dash + last_book
+                else:
+                    #Whole chapter reference
+                    return first_book + " " + str(self.start_chapter) + dash + last_book + " " + str(self.end_chapter)
+            else:
+                return first_book + " " + str(self.start_chapter) + ":" + str(self.start_verse) +\
+                       dash + last_book + " " + str(self.end_chapter) + ":" + str(self.end_verse)
+
+
     def osisRef(self):
         """
         Return reference using the formal OSIS cannonical reference system.
@@ -646,6 +662,17 @@ def get_passage_text(passage, **kwargs):
 
 
 # === Internal functions ===
+def book_name(bible_data, book_n, abbreviated=False, single_psalm=False):
+    """ Return full or abbreviated book name. """
+    if abbreviated:
+        return bible_data.book_names[book_n][2]
+    else:
+        if single_psalm:
+            return "Psalm"
+        else:
+            return bible_data.book_names[book_n][1]
+
+    
 def book_total_verses(bible_data, start_book_n, end_book_n=None):
     """
     Return total number of verses in book or book range,

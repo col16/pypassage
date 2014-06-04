@@ -186,6 +186,10 @@ class TestPassage(unittest.TestCase):
         self.assertEqual(str(P(book='PSA', start_chapter=21)), "Psalm 21") #Psalm, singular
         self.assertEqual(str(P(book='PSA', start_chapter=21, start_verse=1)), "Psalm 21:1") #Psalm, singular
         self.assertEqual(str(P(book='PSA', start_chapter=21, end_chapter=22)), "Psalms 21-22") #Psalms, plural
+        #Multiple book passages
+        self.assertEqual(str(P('Gen',1,1,4,5,'Exo')), "Genesis 1:1-Exodus 4:5")
+        self.assertEqual(str(P('Gen',3,1,2,25,'Exo')), "Genesis 3-Exodus 2")
+        self.assertEqual(str(P('Gen',1,1,22,21,'Rev')), "Genesis-Revelation")
 
     def test_osis_passage_strings(self):
         self.assertEqual(P('GEN',1,1,1,2).osisRef(), "Gen.1.1-Gen.1.2")
