@@ -344,13 +344,13 @@ class Passage(object):
                        dash + last_book + " " + str(self.end_chapter) + ":" + str(self.end_verse)
 
 
-    def osisRef(self):
+    def osis_reference(self):
         """
         Return reference using the formal OSIS cannonical reference system.
         See http://www.bibletechnologies.net/ for details
         """
         return bibledata.osis.normative_book_names[self.start_book_n] + "." + str(self.start_chapter) + "." + str(self.start_verse) + "-" +\
-               bibledata.osis.normative_book_names[self.start_book_n] + "." + str(self.end_chapter) + "." + str(self.end_verse)
+               bibledata.osis.normative_book_names[self.end_book_n] + "." + str(self.end_chapter) + "." + str(self.end_verse)
     
     def text(self, **kwargs):
         """

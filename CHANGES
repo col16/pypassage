@@ -6,6 +6,7 @@ Multi-book support added. New 'end_book' optional parameter for Passage initiali
 Added Passage.text and PassageCollection.text functions
 Deprecated get_passage_text function
 Deprecated Passage.extend function
+Renamed Passage.osisRef function to Passage.osis_reference
 Removed book_total_verses function from Passage object; creating a stand-alone version in its place
 To do:
   Add tests for Passage.text and PassageCollection.text functions

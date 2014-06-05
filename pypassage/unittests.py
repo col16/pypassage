@@ -192,7 +192,8 @@ class TestPassage(unittest.TestCase):
         self.assertEqual(str(P('Gen',1,1,22,21,'Rev')), "Genesis-Revelation")
 
     def test_osis_passage_strings(self):
-        self.assertEqual(P('GEN',1,1,1,2).osisRef(), "Gen.1.1-Gen.1.2")
+        self.assertEqual(P('GEN',1,1,1,2).osis_reference(), "Gen.1.1-Gen.1.2")
+        self.assertEqual(P('GEN',1,1,1,2,'Exo').osis_reference(), "Gen.1.1-Exod.1.2")
     
     #Testing number of verses within passage
     def test_number_verses(self):
