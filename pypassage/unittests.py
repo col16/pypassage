@@ -189,6 +189,7 @@ class TestPassage(unittest.TestCase):
         #Multiple book passages
         self.assertEqual(str(P('Gen',1,1,4,5,'Exo')), "Genesis 1:1-Exodus 4:5")
         self.assertEqual(str(P('Gen',3,1,2,25,'Exo')), "Genesis 3-Exodus 2")
+        self.assertEqual(str(P('Gen',1,1,2,25,'Exo')), "Genesis 1-Exodus 2")
         self.assertEqual(str(P('Gen',1,1,22,21,'Rev')), "Genesis-Revelation")
 
     def test_osis_passage_strings(self):
@@ -302,38 +303,62 @@ class TestPassageCollection(unittest.TestCase):
             self.assertEqual(passage, t[i])
     def test_string(self):
         #Avoiding ambiguity is the highest priority here!
-        #All within the same chapter
+        #A. Single-passage collections
         self.assertEqual(str(C(P('Eph',1))), "Ephesians 1")
         self.assertEqual(str(C(P('Eph',1,5))), "Ephesians 1:5")
         self.assertEqual(str(C(P('Eph',1,5,1,9))), "Ephesians 1:5-9")
         self.assertEqual(str(C(P('Eph',1,1,5,33))), "Ephesians 1-5")
+        
+        #B. All within the same book and same chapter
         self.assertEqual(str(C(P('Eph',1,1),P('Eph',1,3),P('Eph',1,5))), "Ephesians 1:1, 1:3, 1:5")
         self.assertEqual(str(C(P('Eph',1,9),P('Eph',1,3),P('Eph',1,5))), "Ephesians 1:9, 1:3, 1:5")
         self.assertEqual(str(C(P('Eph',1,9),P('Eph',1,13,1,17))), "Ephesians 1:9, 1:13-17")
         self.assertEqual(str(C(P('Eph',1,1,1,9),P('Eph',1,15))), "Ephesians 1:1-9, 1:15")
         self.assertEqual(str(C(P('Eph',1,1),P('Eph',1,3,1,7),P('Eph',1,15))), "Ephesians 1:1, 1:3-7, 1:15")
-        #Different chapters
+        
+        #C. Different chapters but same book
         self.assertEqual(str(C(P('Eph',1),P('Eph',3),P('Eph',5))), "Ephesians 1, 3, 5")
         self.assertEqual(str(C(P('Eph',1),P('Eph',3),P('Eph',5,9))), "Ephesians 1, 3, 5:9")
         self.assertEqual(str(C(P('Eph',1),P('Eph',3,1,4,9),P('Eph',3,5))), "Ephesians 1, 3:1-4:9, 3:5")
-        self.assertEqual(str(C(P('Eph',1,1),P('Eph',3),P('Eph',5))), "Ephesians 1:1, 3:1-21, 5:1-33") #as soon as a verse is mentioned, the following references must all be chapter and verse
+        #As soon as a verse is mentioned, the following references must all be chapter and verse
+        self.assertEqual(str(C(P('Eph',1,1),P('Eph',3),P('Eph',5))), "Ephesians 1:1, 3:1-21, 5:1-33")
         self.assertEqual(str(C(P('Eph',1),P('Eph',3,5),P('Eph',6))), "Ephesians 1, 3:5, 6:1-24")
         self.assertEqual(str(C(P('Eph',1),P('Eph',3,1,4,32),P('Eph',5,5),P('Eph',6))), "Ephesians 1, 3-4, 5:5, 6:1-24")
         self.assertEqual(str(C(P('Eph',1),P('Eph',3,1,3,9),P('Eph',5))), "Ephesians 1, 3:1-9, 5:1-33")
-        #Different books
+        
+        #D. Different books, but individual references all just from one book
         self.assertEqual(str(C(P('Eph',1),P('Gen',3,2),P('Mat',5))), "Ephesians 1; Genesis 3:2; Matthew 5")
+        self.assertEqual(str(C(P('Eph',1,1,1,2),P('Mat',5))), "Ephesians 1:1-2; Matthew 5")
+        self.assertEqual(str(C(P('Eph'),P('Mat',5))), "Ephesians; Matthew 5")
+        #Consecutive passages from same book
         self.assertEqual(str(C(P('Eph',1),P('Gen',1),P('Gen',3),P('Gen',5),P('Mat',5))), "Ephesians 1; Genesis 1, 3, 5; Matthew 5")
         self.assertEqual(str(C(P('Eph',1),P('Gen',1,1),P('Gen',1,3),P('Gen',1,5),P('Mat',5),P('Mat',9),P('Mat',1))), "Ephesians 1; Genesis 1:1, 1:3, 1:5; Matthew 5, 9, 1")
-        self.assertEqual(str(C(P('Eph',1,1,1,2),P('Mat',5))), "Ephesians 1:1-2; Matthew 5")
         self.assertEqual(str(C(P('Eph',1),P('Eph',3),P('Eph',5,9),P('Mat',5))), "Ephesians 1, 3, 5:9; Matthew 5")
         self.assertEqual(str(C(P('Eph',1),P('Eph',3),P('Eph',5,9,6,2),P('Mat',5))), "Ephesians 1, 3, 5:9-6:2; Matthew 5")
         self.assertEqual(str(C(P('Eph',start_chapter=1,end_chapter=3),P('Eph',4))), "Ephesians 1-3, 4")
+        #As soon as a verse is mentioned, the following references must all be chapter and verse
         self.assertEqual(str(C(P('Eph',1,1),P('Eph',3),P('Eph',5,9),P('Mat',5))), "Ephesians 1:1, 3:1-21, 5:9; Matthew 5")
         self.assertEqual(str(C(P('Eph',1),P('Gen',3,2),P('Gen',3,6),P('Gen',8),P('Mat',5))), "Ephesians 1; Genesis 3:2, 3:6, 8:1-22; Matthew 5")
         self.assertEqual(str(C(P('Eph',1,1),P('Eph',3),P('Eph',5),P('Mat',5))), "Ephesians 1:1, 3:1-21, 5:1-33; Matthew 5")
-        self.assertEqual(str(C(P('Eph'),P('Mat',5))), "Ephesians; Matthew 5")
-        #Single-chapter books
+        
+        #E. Single-chapter books
         self.assertEqual(str(C(P('Phm',1),P('Phm',1,3,1,6),P('Phm',15))), "Philemon 1, 3-6, 15")
+        self.assertEqual(str(C(P('Mat',1),P('Phm',1,3,1,6),P('Phm',15),P('Rev'))), "Matthew 1; Philemon 3-6, 15; Revelation")
+
+        #F. Multi-book passages
+        # Single-passage collection
+        self.assertEqual(str(C(P('Gen',1,1,4,5,'Exo'))), "Genesis 1:1-Exodus 4:5")
+        self.assertEqual(str(C(P('Gen',1,1,2,25,'Exo'))), "Genesis 1-Exodus 2")
+        self.assertEqual(str(C(P('Gen',1,1,22,21,'Rev'))), "Genesis-Revelation")
+        # Consecutive passage ending points
+        self.assertEqual(str(C(P('Gen',1,1,4,5,'Exo'),P('Exo',4,6))), "Genesis 1:1-Exodus 4:5; Exodus 4:6")
+        self.assertEqual(str(C(P('Gen',1,1,2,25,'Exo'),P('Exo',3))), "Genesis 1-Exodus 2; Exodus 3")
+        self.assertEqual(str(C(P('Gen',3,1,2,25,'Exo'),P('Exo',3,1))), "Genesis 3-Exodus 2; Exodus 3:1")
+        self.assertEqual(str(C(P('Gen',1,1,1,25,'Jude'),P('Rev'))), "Genesis-Jude; Revelation")
+        #Consecutive passage starting points
+        self.assertEqual(str(C(P('Gen',1),P('Gen',2),P('Gen',3,1,1,22,'Exo'))), "Genesis 1, 2; Genesis 3-Exodus 1")
+        self.assertEqual(str(C(P('Gen',1,1),P('Gen',1,2),P('Gen',1,3,1,2,'Exo'))), "Genesis 1:1, 1:2; Genesis 1:2-Exodus 1:2")
+        self.assertEqual(str(C(P('Gen'),P('Exo',1,1,27,34,'Lev'))), "Genesis; Exodus-Leviticus")
 
 
 class TestPassageDelta(unittest.TestCase):
