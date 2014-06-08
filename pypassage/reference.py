@@ -46,7 +46,7 @@ class Passage(object):
                     raise InvalidPassageException()
 
         #Check and normalise numeric reference inputs
-        (self.start_chapter, self.start_verse, self.end_chapter, self.end_verse) = check_reference(self.start_book_n, bd, start_chapter, start_verse, end_chapter, end_verse)
+        (self.start_chapter, self.start_verse, self.end_chapter, self.end_verse) = check_reference(bd, self.start_book_n, start_chapter, start_verse, self.end_book_n, end_chapter, end_verse)
 
         #Raise exception now if passage is still invalid
         if not self.is_valid():
@@ -259,7 +259,7 @@ class Passage(object):
                     else:
                         n += len(valid_verses)
             #If we've got through the loop and haven't returned a Passage object, something's gone amiss.
-            raise Exception("Got to end_verse and still hadn't reached current_length!")
+            raise Exception("Error: Could not truncate passage. Got to end_verse and still hadn't reached current_length.")
         
     def extend(self, number_verses=None, proportion_of_book=None):
         """
@@ -461,12 +461,15 @@ class PassageCollection(list):
         passagelist = [p for p in self if p.is_valid()]
         if len(passagelist) == 0: return "Invalid passages"
 
-        #Group by consecutive passages with same book
+        #Group any consecutive single-book passages within same book
         groups = []; i=0;
         while i < len(passagelist):
-            group_start = i; book = passagelist[i].start_book_n
-            while i+1 < len(passagelist) and passagelist[i+1].start_book_n == book:
-                i += 1
+            group_start = i
+            book = passagelist[i].start_book_n
+            if passagelist[i].start_book_n == passagelist[i].end_book_n:
+                #Single-book passage. Find all other single-book passages within the same book
+                while i+1 < len(passagelist) and passagelist[i+1].start_book_n == book and passagelist[i+1].end_book_n == book:
+                    i += 1
             group_end = i
             groups.append(passagelist[group_start:group_end+1])
             i += 1
@@ -474,6 +477,12 @@ class PassageCollection(list):
         #Create strings for each group (of consecutive passages within the same book)
         group_strings = [];
         for group in groups:
+            if len(group) == 1:
+                group_strings.append(str(group[0]))
+                continue
+            else:
+                if group[0].start_book_n != group[0].end_book_n:
+                    raise Exception("Error: Could not generate reference string. Multi-book passage group but len(group) != 1.")
             if group[0].bd.number_chapters[group[0].start_book_n] == 1:
                 #Group of reference(s) from a single-chapter book
                 parts = []
@@ -482,12 +491,13 @@ class PassageCollection(list):
                         parts.append(str(p.start_verse))
                     else:
                         parts.append(str(p.start_verse) + dash + str(p.end_verse))
-                group_strings.append(group[0].book_name(abbreviated) + " " + ", ".join(parts))
+                book = book_name(group[0].bd, group[0].start_book_n, abbreviated)
+                group_strings.append(book + " " + ", ".join(parts))
             else:
                 #Group of references from multi-chapter book
                 if (len(group) == 1 and group[0].complete_book() == 1.0):
                     #Special case where there is only one reference in bunch, and that reference is for a whole book.
-                    group_strings.append(group[0].book_name(abbreviated))
+                    group_strings.append(book_name(group[0].bd, group[0].start_book_n, abbreviated))
                 else:
                     #For readability and simplicity, this part of the algorithm is within the MCBGroup class
                     bunched = MCBGroup()
@@ -816,12 +826,14 @@ class MCBGroup(object):
         return book + " " + ", ".join(textual_bunches)
 
 
-def check_reference(book_n, bd, start_chapter=None, start_verse=None, end_chapter=None, end_verse=None):
+def check_reference(bd, start_book_n, start_chapter=None, start_verse=None, end_book_n=None, end_chapter=None, end_verse=None):
     """
     Check and normalise numeric reference inputs (start_chapter, start_verse, end_chapter and end_verse)
     Where possible, missing inputs will be inferred. Thus for example, if start_chapter and end_chapter
     are provided but start_verse and end_verse are not, it will be assumed that the whole chapter was intended.
     """
+
+    if end_book_n == None: end_book_n = start_book_n
 
     #Check which numbers have been provided.
     sc = sv = ec = ev = True
@@ -839,11 +851,11 @@ def check_reference(book_n, bd, start_chapter=None, start_verse=None, end_chapte
     #No chapter/verse information at all: Assume reference was for full book
     if not sc and not sv and not ec and not ev:
         start_chapter = start_verse = 1
-        end_chapter = bd.number_chapters[book_n]
-        end_verse = bd.last_verses[book_n, end_chapter]
+        end_chapter = bd.number_chapters[end_book_n]
+        end_verse = bd.last_verses[end_book_n, end_chapter]
         return (start_chapter, start_verse, end_chapter, end_verse)
 
-    if bd.number_chapters[book_n] == 1:
+    if start_book_n == end_book_n and bd.number_chapters[start_book_n] == 1:
         #Checks for single-chapter books
         
         if not sc and not sv:
@@ -901,45 +913,35 @@ def check_reference(book_n, bd, start_chapter=None, start_verse=None, end_chapte
                 else:
                     #Neither start verse or end verse were provided. start_verse has already
                     #been set to 1 above; set end_verse to be the last verse of the chapter.
-                    end_verse = bd.last_verses.get((book_n, end_chapter),1)
+                    end_verse = bd.last_verses.get((end_book_n, end_chapter),1)
                     #NB: if chapter doesn't exist, passage won't be valid anyway
             else:
                 #Multi-chapter reference
                 #Start by truncating end_chapter if necessary
-                if end_chapter > bd.number_chapters[book_n]:
-                    end_chapter = bd.number_chapters[book_n]
+                if end_chapter > bd.number_chapters[end_book_n]:
+                    end_chapter = bd.number_chapters[end_book_n]
                     #NB: if start chapter doesn't exist, passage won't be valid anyway
                 #Assume end_verse is equal to the last verse of end_chapter
-                end_verse = bd.last_verses[book_n, end_chapter]
+                end_verse = bd.last_verses[end_book_n, end_chapter]
 
     #Check that end chapter and end verse are both valid; truncate if necessary
-    if end_chapter > bd.number_chapters[book_n]:
-        end_chapter = bd.number_chapters[book_n]
-        end_verse = bd.last_verses[book_n, end_chapter]
-    elif end_verse > bd.last_verses[book_n, end_chapter]:
-        end_verse = bd.last_verses[book_n, end_chapter]
+    if end_chapter > bd.number_chapters[end_book_n]:
+        end_chapter = bd.number_chapters[end_book_n]
+        end_verse = bd.last_verses[end_book_n, end_chapter]
+    elif end_verse > bd.last_verses[end_book_n, end_chapter]:
+        end_verse = bd.last_verses[end_book_n, end_chapter]
 
     #Check that neither the start or end verses are "missing verses"; shorten if not
-    if start_chapter == end_chapter:
-        #Single-chapter reference
-        missing = bd.missing_verses.get((book_n, start_chapter),[])
-        while start_verse in missing:
-            if start_verse < end_verse:
-                start_verse += 1
-            else: raise InvalidPassageException()
-        while end_verse in missing:
-            end_verse -= 1
-    else:
-        missing_start = bd.missing_verses.get((book_n, start_chapter),[])
-        while start_verse in missing_start:
-            start_verse += 1
-        missing_end = bd.missing_verses.get((book_n, end_chapter),[])
-        while end_verse in missing_end:
-            end_verse -= 1
-        if end_verse < 1:
-            end_chapter -= 1
-            end_verse = bd.last_verses[book_n, end_chapter]
-        
+    missing_start = bd.missing_verses.get((start_book_n, start_chapter),[])
+    while start_verse in missing_start:
+        start_verse += 1
+    missing_end = bd.missing_verses.get((end_book_n, end_chapter),[])
+    while end_verse in missing_end:
+        end_verse -= 1
+    if end_verse < 1:
+        end_chapter -= 1
+        end_verse = bd.last_verses[end_book_n, end_chapter]
+    
     #Finished checking passage; return normalised values
     return (start_chapter, start_verse, end_chapter, end_verse)
 

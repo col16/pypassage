@@ -51,6 +51,7 @@ class TestPassage(unittest.TestCase):
         self.assertEqual(P(book='genesis', start_chapter=1, start_verse=1, end_chapter=2, end_verse=1).is_valid(), True)
         self.assertEqual(P(book='GEN', start_chapter=1, start_verse=1, end_chapter=2, end_verse=1), P(1,1,1,2,1))
         self.assertEqual(P(book='GEN', start_chapter=1, start_verse=1, end_book='REV', end_chapter=1, end_verse=1).is_valid(), True)
+        self.assertEqual(P(book='GEN', end_book='LEV').is_valid(), True)
 
     #Testing passage normalisation
     def test_multi_chapter_books(self):
@@ -356,8 +357,9 @@ class TestPassageCollection(unittest.TestCase):
         self.assertEqual(str(C(P('Gen',3,1,2,25,'Exo'),P('Exo',3,1))), "Genesis 3-Exodus 2; Exodus 3:1")
         self.assertEqual(str(C(P('Gen',1,1,1,25,'Jude'),P('Rev'))), "Genesis-Jude; Revelation")
         #Consecutive passage starting points
+        self.assertEqual(str(C(P('Gen',1),P('Gen',3,1,1,22,'Exo'))), "Genesis 1; Genesis 3-Exodus 1")
         self.assertEqual(str(C(P('Gen',1),P('Gen',2),P('Gen',3,1,1,22,'Exo'))), "Genesis 1, 2; Genesis 3-Exodus 1")
-        self.assertEqual(str(C(P('Gen',1,1),P('Gen',1,2),P('Gen',1,3,1,2,'Exo'))), "Genesis 1:1, 1:2; Genesis 1:2-Exodus 1:2")
+        self.assertEqual(str(C(P('Gen',1,1),P('Gen',1,2),P('Gen',1,3,1,2,'Exo'))), "Genesis 1:1, 1:2; Genesis 1:3-Exodus 1:2")
         self.assertEqual(str(C(P('Gen'),P('Exo',1,1,27,34,'Lev'))), "Genesis; Exodus-Leviticus")
 
 
