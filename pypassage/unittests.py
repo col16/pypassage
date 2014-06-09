@@ -363,6 +363,9 @@ class TestPassageCollection(unittest.TestCase):
         self.assertEqual(str(C(P('Gen',1,1),P('Gen',1,2),P('Gen',1,3,1,2,'Exo'))), "Genesis 1:1, 1:2; Genesis 1:3-Exodus 1:2")
         self.assertEqual(str(C(P('Gen'),P('Exo',1,1,27,34,'Lev'))), "Genesis; Exodus-Leviticus")
 
+        #G. Abbreviated strings
+        self.assertEqual(C(P('Eph',1),P('Gen',3,2),P('Gen',3,6),P('Gen',8),P('Mat',5)).abbr(), 'Eph 1; Gn 3:2, 3:6, 8:1-22; Mt 5')
+
 
 class TestPassageDelta(unittest.TestCase):
 

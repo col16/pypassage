@@ -429,6 +429,7 @@ class Passage(object):
             return NotImplemented
 
 
+
 class PassageCollection(list):
     """
     Class to contain list of Passage objects and derive corresponding reference strings
@@ -478,7 +479,7 @@ class PassageCollection(list):
         group_strings = [];
         for group in groups:
             if len(group) == 1:
-                group_strings.append(str(group[0]))
+                group_strings.append(group[0].reference_string(abbreviated))
                 continue
             else:
                 if group[0].start_book_n != group[0].end_book_n:
@@ -572,6 +573,7 @@ class PassageCollection(list):
         x.__repr__() <==> x
         """
         return "PassageCollection(" + ", ".join([repr(x) for x in self]) + ")"
+
 
 
 class PassageDelta(object):
