@@ -392,7 +392,7 @@ class Passage(object):
         """
         x.__repr__() <==> x
         """
-        return "Passage(book="+repr(self.start_book_n)+", start_chapter="+repr(self.start_chapter)+", start_verse="+repr(self.start_verse)+", end_chapter="+repr(self.end_chapter)+", end_verse="+repr(self.end_verse)+")"
+        return "Passage(book="+repr(self.start_book_n)+", start_chapter="+repr(self.start_chapter)+", start_verse="+repr(self.start_verse)+", end_book="+repr(self.end_book_n)+", end_chapter="+repr(self.end_chapter)+", end_verse="+repr(self.end_verse)+")"
     
     def __cmp__(self, other):
         """ Object sorting function. Sorting is based on start chapter/verse. """
@@ -404,7 +404,7 @@ class Passage(object):
         Equality checking.
         """
         if not isinstance(other, Passage): return False
-        if (self.start_book_n == other.start_book_n) and (self.start_chapter == other.start_chapter) and (self.start_verse == other.start_verse) and (self.end_chapter == other.end_chapter) and (self.end_verse == other.end_verse):
+        if (self.start_book_n == other.start_book_n) and (self.start_chapter == other.start_chapter) and (self.start_verse == other.start_verse) and (self.end_book_n == other.end_book_n) and (self.end_chapter == other.end_chapter) and (self.end_verse == other.end_verse):
             return True
         else:
             return False
@@ -604,7 +604,7 @@ class PassageDelta(object):
                 (end_book_n,
                     end_chapter,
                     end_verse) = delta_chapter(self.delta_chapter,
-                                                other.start_book_n, #other.end_book_n
+                                                other.end_book_n,
                                                 other.end_chapter,
                                                 other.end_verse,
                                                 other.bd,
@@ -618,18 +618,18 @@ class PassageDelta(object):
                                                 end_verse,
                                                 other.bd)
 
-                return Passage(other.start_book_n, #other.start_book_n
+                return Passage(other.start_book_n,
                                 other.start_chapter,
                                 other.start_verse,
-                                #end_book_n,
                                 end_chapter,
-                                end_verse)
+                                end_verse,
+                                end_book_n)
             else:
                 # Compute chapter difference operation first
                 (start_book_n,
                     start_chapter,
                     start_verse) = delta_chapter(-self.delta_chapter,
-                                                    other.start_book_n, #other.start_book_n
+                                                    other.start_book_n,
                                                     other.start_chapter,
                                                     other.start_verse,
                                                     other.bd)
@@ -645,9 +645,9 @@ class PassageDelta(object):
                 return Passage(start_book_n, 
                                 start_chapter,
                                 start_verse,
-                                #other.end_book_n,
                                 other.end_chapter,
-                                other.end_verse)
+                                other.end_verse,
+                                other.end_book_n)
         else:
             return NotImplemented
 
@@ -700,8 +700,24 @@ def book_total_verses(bible_data, start_book_n, end_book_n=None):
 def delta_chapter(chapter_difference, current_book_n, current_chapter, current_verse, bible_data, finishes_at_end_of_chapter=False):
     new_chapter = current_chapter + chapter_difference
     if new_chapter > bible_data.number_chapters[current_book_n]:
+        #Got to end of book; need to go to next book
         overflow_chapters = new_chapter - bible_data.number_chapters[current_book_n]
-        return delta_chapter(overflow_chapters, current_book_n+1, 0, current_verse, bible_data, finishes_at_end_of_chapter)
+        if current_book_n == 66:
+            #Got to the end of the bible; can't go any further
+            c = bible_data.number_chapters[current_book_n]
+            v = bible_data.last_verses[current_book_n, c]
+            return (current_book_n, c, v)
+        else:
+            return delta_chapter(overflow_chapters, current_book_n+1, 0, current_verse, bible_data, finishes_at_end_of_chapter)
+    elif new_chapter < 1:
+        #Got to start of book; need to go to previous book
+        overflow_chapters = new_chapter - 1
+        if current_book_n == 1:
+            #Got to start of the bible; can't go any further
+            return (1, 1, 1)
+        else:
+            c = bible_data.number_chapters[current_book_n-1]
+            return delta_chapter(overflow_chapters, current_book_n-1, c+1, current_verse, bible_data, finishes_at_end_of_chapter)
     else:
         if finishes_at_end_of_chapter or current_verse > bible_data.last_verses[current_book_n, new_chapter]:
             current_verse = bible_data.last_verses[current_book_n, new_chapter]
@@ -711,14 +727,36 @@ def delta_chapter(chapter_difference, current_book_n, current_chapter, current_v
 def delta_verse(verse_difference, current_book_n, current_chapter, current_verse, bible_data):
     new_verse = current_verse + verse_difference
     if new_verse > bible_data.last_verses[current_book_n, current_chapter]:
+        #Got to end of chapter; need to go to next chapter
         overflow_verses =  new_verse - bible_data.last_verses[current_book_n, current_chapter]
         if current_chapter == bible_data.number_chapters[current_book_n]:
-            return delta_verse(overflow_verses, current_book_n+1, 0, current_verse, bible_data)
+            #Got to end of book; need to go to next book
+            if current_book_n == 66:
+                #Got to end of the bible; can't go any further
+                c = bible_data.number_chapters[current_book_n]
+                v = bible_data.last_verses[current_book_n, c]
+                return (current_book_n, c, v)
+            else:
+                return delta_verse(overflow_verses, current_book_n+1, 1, 0, bible_data)
         else:
+            #Next chapter within the same book
             return delta_verse(overflow_verses, current_book_n, current_chapter+1, 0, bible_data)
     elif new_verse < 1:
-        last_v_prev_chapter = bible_data.last_verses[current_book_n, current_chapter-1]
-        return delta_verse(new_verse, current_book_n, current_chapter-1, last_v_prev_chapter, bible_data)
+        #Got to start of chapter; need to go to previous chapter
+        overflow_verses = new_verse - 1
+        if current_chapter == 1:
+            #Got to start of book; need to go to previous book
+            if current_book_n == 1:
+                #Got to start of the bible; can't go any further
+                return (1, 1, 1)
+            else:
+                c = bible_data.number_chapters[current_book_n-1]
+                v = bible_data.last_verses[current_book_n-1, c]
+                return delta_verse(overflow_verses, current_book_n-1, c, v+1, bible_data)
+        else:
+            c = current_chapter - 1
+            v = bible_data.last_verses[current_book_n, c]
+            return delta_verse(overflow_verses, current_book_n, c, v+1, bible_data)
     else:
         return (current_book_n, current_chapter, new_verse)
 

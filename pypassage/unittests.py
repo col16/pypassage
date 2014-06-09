@@ -91,9 +91,10 @@ class TestPassage(unittest.TestCase):
         p.end_verse = 3
         self.assertEqual(p, P('Gen',1,1,1,3))
         #Change book
-        p.start_book_n = 2
+        p.start_book_n = p.end_book_n = 2
         self.assertEqual(p, P('Exo',1,1,1,3))
         p.book_n = 3 #Deprecated version of start_book_n
+        p.end_book_n = 3
         self.assertEqual(p, P('Lev',1,1,1,3))
         #Change start_chapter in a way that would make passage invalid
         p.start_chapter = 4
@@ -375,43 +376,84 @@ class TestPassageDelta(unittest.TestCase):
         #Special case for passages that finish at the end of a chapter already:
         #here end verse is equal to the last verse of incremented chapter
         self.assertEqual(P('Gen',3,1,3,24)+D(chapters=1), P('Gen',3,1,4,26))
+        #Delta chapter pushing reference out into next book (NB: Gen has 50 chapters, Exo has 40)
+        self.assertEqual(P('Gen',1,1)+D(chapters=50), P('Gen',1,1,1,1,'Exo'))
+        self.assertEqual(P('Gen',3,1,3,24)+D(chapters=50), P('Gen',3,1,3,22,'Exo'))
+        self.assertEqual(P('Gen',1,1)+D(chapters=90), P('Gen',1,1,1,1,'Lev'))
+        #Delta chapter taking through to end of the bible (NB: total of 1189 chapters in the bible)
+        self.assertEqual(P('Gen',1,1)+D(chapters=1190), P('Gen',1,1,22,21,'Rev'))
     def test_negative_delta_chapter_with_passage_end(self):
         #Here we want to REMOVE chapters from the end of the passage;
         #leaving passage shorter than it was
         self.assertEqual(P('Gen',1,1,3,1)+D(chapters=-1), P('Gen',1,1,2,1))
-        #Automatic truncation
+        #Automatic truncation of end verse
         self.assertEqual(P('Gen',3,1,4,26)+D(chapters=-1), P('Gen',3,1,3,24))
         #Special case for passages finishing at the end of a chapter
         self.assertEqual(P('Gen',1,1,2,25)+D(chapters=-1), P('Gen',1,1,1,31))
+        #Delta chapter pushing reference back into previous book
+        self.assertEqual(P('Gen',1,1,10,1,'Exo')+D(chapters=-10), P('Gen',1,1,50,1))
+        self.assertEqual(P('Gen',1,1,10,1,'Exo')+D(chapters=-20), P('Gen',1,1,40,1))
+        #Delta chapter greater than length of passage
+        try:
+            p = P('Gen',2,1)+D(chapters=-1)
+        except InvalidPassageException: pass
+        #Special case where passage had started in Gen 1:1
+        self.assertEqual(P('Gen',1,1,2,25)+D(chapters=-2), P('Gen',1,1))
     def test_delta_chapter_with_passage_start(self):
         #Adding chapters to the START of a passage
-        self.assertEqual(P('Gen',2,1,2,1)+D(chapters=1, passage_end=False), P('Gen',1,1,2,1))
-        #Truncation
+        self.assertEqual(P('Gen',2,1)+D(chapters=1, passage_end=False), P('Gen',1,1,2,1))
+        #Adding more chapters than are available
+        self.assertEqual(P('Gen',2,1)+D(chapters=3, passage_end=False), P('Gen',1,1,2,1))
+        #Delta chapter pushing reference out into previous book
+        self.assertEqual(P('Exo',2,1)+D(chapters=3, passage_end=False), P('Gen',49,1,2,1,'Exo'))
+        #Truncation of start_verse
         self.assertEqual(P('Gen',4,26)+D(chapters=1, passage_end=False), P('Gen',3,24,4,26))
     def test_negative_delta_chapter_with_passage_start(self):
         #REMOVING chapters from the start of a passage
         self.assertEqual(P('Gen',4,1,5,32)+D(chapters=-1, passage_end=False), P('Gen',5,1,5,32))
-        #Truncation
+        #Delta chapter pushing reference back into next book
+        self.assertEqual(P('Gen',1,1,40,38,'Exo')+D(chapters=-50, passage_end=False), P('Exo',1,1,40,38))
+        #Delta chapter greater than length of passage
+        try:
+            p = P('Gen',1,1)+D(chapters=-1, passage_end=False)
+        except InvalidPassageException: pass
+        #Truncation of start_verse
         self.assertEqual(P('Gen',1,31,5,32)+D(chapters=-1, passage_end=False), P('Gen',2,25,5,32))
 
     def test_delta_verse_with_passage_end(self):
         #Adding verses to the end of a passage
         self.assertEqual(P('Gen',1,1)+D(verses=1), P('Gen',1,1,1,2))
+        #Pushing reference out into next chapter
         self.assertEqual(P('Gen',1,1)+D(verses=50), P('Gen',1,1,2,20))
+        #Pushing reference out into next book
+        self.assertEqual(P('Gen',1,1)+D(verses=1533), P('Gen',1,1,1,1,'Exo'))
+        #Delta chapter taking through to end of the bible
+        self.assertEqual(P('Rev',20,1)+D(verses=500), P('Rev',20,1,22,21))
     def test_negative_delta_verse_with_passage_end(self):
         #Removing verses from the end of a passage
         self.assertEqual(P('Gen',1,1,1,31)+D(verses=-1), P('Gen',1,1,1,30))
     def test_delta_verse_with_passage_start(self):
         #Adding verses to the start of a passage
         self.assertEqual(P('Gen',1,2)+D(verses=1, passage_end=False), P('Gen',1,1,1,2))
+        #Back into previous chapter
+        self.assertEqual(P('Gen',2,1)+D(verses=1, passage_end=False), P('Gen',1,31,2,1))
         self.assertEqual(P('Gen',2,1)+D(verses=31, passage_end=False), P('Gen',1,1,2,1))
+        #Back into previous book
+        self.assertEqual(P('Exo',1,1)+D(verses=1, passage_end=False), P('Gen',50,26,1,1,'Exo'))
+        #Back to start of bible
+        self.assertEqual(P('Gen',2,1)+D(verses=100, passage_end=False), P('Gen',1,1,2,1))
     def test_negative_delta_verse_with_passage_start(self):
         #Removing verses from the start of a passage
         self.assertEqual(P('Gen',1,1,1,31)+D(verses=-1, passage_end=False), P('Gen',1,2,1,31))
-
-    #Tests to add:
-    #Passage deltas that push passage into multiple books
-    #Passage deltas where start or end of bible is encountered (Gen 1:1 or Rev 22:21); truncated automatically
+        #Shorter by a chapter
+        self.assertEqual(P('Gen',1,31,2,1)+D(verses=-1, passage_end=False), P('Gen',2,1))
+        #Shorter by a book
+        self.assertEqual(P('Gen',50,26,1,1,'Exo')+D(verses=-1, passage_end=False), P('Exo',1,1))
+        #Delta verse greater than length of passage
+        try:
+            p = P('Gen',1,1)+D(verses=-1, passage_end=False)
+        except InvalidPassageException:
+            pass
 
 
 class TestPassageLookup(unittest.TestCase):
