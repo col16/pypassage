@@ -404,24 +404,24 @@ class TestPassageDelta(unittest.TestCase):
         self.assertEqual(P('Gen',1,1,2,25)+D(chapters=-2), P('Gen',1,1))
     def test_delta_chapter_with_passage_start(self):
         #Adding chapters to the START of a passage
-        self.assertEqual(P('Gen',2,1)+D(chapters=1, passage_end=False), P('Gen',1,1,2,1))
+        self.assertEqual(P('Gen',2,1)+D(chapters=1, passage_start=True), P('Gen',1,1,2,1))
         #Adding more chapters than are available
-        self.assertEqual(P('Gen',2,1)+D(chapters=3, passage_end=False), P('Gen',1,1,2,1))
+        self.assertEqual(P('Gen',2,1)+D(chapters=3, passage_start=True), P('Gen',1,1,2,1))
         #Delta chapter pushing reference out into previous book
-        self.assertEqual(P('Exo',2,1)+D(chapters=3, passage_end=False), P('Gen',49,1,2,1,'Exo'))
+        self.assertEqual(P('Exo',2,1)+D(chapters=3, passage_start=True), P('Gen',49,1,2,1,'Exo'))
         #Truncation of start_verse
-        self.assertEqual(P('Gen',4,26)+D(chapters=1, passage_end=False), P('Gen',3,24,4,26))
+        self.assertEqual(P('Gen',4,26)+D(chapters=1, passage_start=True), P('Gen',3,24,4,26))
     def test_negative_delta_chapter_with_passage_start(self):
         #REMOVING chapters from the start of a passage
-        self.assertEqual(P('Gen',4,1,5,32)+D(chapters=-1, passage_end=False), P('Gen',5,1,5,32))
+        self.assertEqual(P('Gen',4,1,5,32)+D(chapters=-1, passage_start=True), P('Gen',5,1,5,32))
         #Delta chapter pushing reference back into next book
-        self.assertEqual(P('Gen',1,1,40,38,'Exo')+D(chapters=-50, passage_end=False), P('Exo',1,1,40,38))
+        self.assertEqual(P('Gen',1,1,40,38,'Exo')+D(chapters=-50, passage_start=True), P('Exo',1,1,40,38))
         #Delta chapter greater than length of passage
         try:
-            p = P('Gen',1,1)+D(chapters=-1, passage_end=False)
+            p = P('Gen',1,1)+D(chapters=-1, passage_start=True)
         except InvalidPassageException: pass
         #Truncation of start_verse
-        self.assertEqual(P('Gen',1,31,5,32)+D(chapters=-1, passage_end=False), P('Gen',2,25,5,32))
+        self.assertEqual(P('Gen',1,31,5,32)+D(chapters=-1, passage_start=True), P('Gen',2,25,5,32))
 
     def test_delta_verse_with_passage_end(self):
         #Adding verses to the end of a passage
@@ -437,24 +437,24 @@ class TestPassageDelta(unittest.TestCase):
         self.assertEqual(P('Gen',1,1,1,31)+D(verses=-1), P('Gen',1,1,1,30))
     def test_delta_verse_with_passage_start(self):
         #Adding verses to the start of a passage
-        self.assertEqual(P('Gen',1,2)+D(verses=1, passage_end=False), P('Gen',1,1,1,2))
+        self.assertEqual(P('Gen',1,2)+D(verses=1, passage_start=True), P('Gen',1,1,1,2))
         #Back into previous chapter
-        self.assertEqual(P('Gen',2,1)+D(verses=1, passage_end=False), P('Gen',1,31,2,1))
-        self.assertEqual(P('Gen',2,1)+D(verses=31, passage_end=False), P('Gen',1,1,2,1))
+        self.assertEqual(P('Gen',2,1)+D(verses=1, passage_start=True), P('Gen',1,31,2,1))
+        self.assertEqual(P('Gen',2,1)+D(verses=31, passage_start=True), P('Gen',1,1,2,1))
         #Back into previous book
-        self.assertEqual(P('Exo',1,1)+D(verses=1, passage_end=False), P('Gen',50,26,1,1,'Exo'))
+        self.assertEqual(P('Exo',1,1)+D(verses=1, passage_start=True), P('Gen',50,26,1,1,'Exo'))
         #Back to start of bible
-        self.assertEqual(P('Gen',2,1)+D(verses=100, passage_end=False), P('Gen',1,1,2,1))
+        self.assertEqual(P('Gen',2,1)+D(verses=100, passage_start=True), P('Gen',1,1,2,1))
     def test_negative_delta_verse_with_passage_start(self):
         #Removing verses from the start of a passage
-        self.assertEqual(P('Gen',1,1,1,31)+D(verses=-1, passage_end=False), P('Gen',1,2,1,31))
+        self.assertEqual(P('Gen',1,1,1,31)+D(verses=-1, passage_start=True), P('Gen',1,2,1,31))
         #Shorter by a chapter
-        self.assertEqual(P('Gen',1,31,2,1)+D(verses=-1, passage_end=False), P('Gen',2,1))
+        self.assertEqual(P('Gen',1,31,2,1)+D(verses=-1, passage_start=True), P('Gen',2,1))
         #Shorter by a book
-        self.assertEqual(P('Gen',50,26,1,1,'Exo')+D(verses=-1, passage_end=False), P('Exo',1,1))
+        self.assertEqual(P('Gen',50,26,1,1,'Exo')+D(verses=-1, passage_start=True), P('Exo',1,1))
         #Delta verse greater than length of passage
         try:
-            p = P('Gen',1,1)+D(verses=-1, passage_end=False)
+            p = P('Gen',1,1)+D(verses=-1, passage_start=True)
         except InvalidPassageException:
             pass
 

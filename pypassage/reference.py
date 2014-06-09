@@ -580,13 +580,13 @@ class PassageDelta(object):
     """
     Extension (or contraction) of passages, in chapter or verse increments.
     """
-    def __init__(self, chapters=0, verses=0, passage_end=True):
+    def __init__(self, chapters=0, verses=0, passage_start=False):
         """
         PassageDelta initialisation.
-        To add (or remove) chapters and/or verses to the END of a passage, set passage_end=True.
-        To add (or remove) chapters and/or verses to the START of a passage, set passage_end=False.
+        To add (or remove) chapters and/or verses to the START of a passage, set
+        passage_start=True. Otherwise chapters/verses will be added to the END of a passage.
         """
-        self.passage_end = passage_end
+        self.passage_start = passage_start
         self.delta_chapter = chapters
         self.delta_verse = verses
 
@@ -596,7 +596,8 @@ class PassageDelta(object):
         Addition of Passage and PassageDelta objects
         """
         if isinstance(other,Passage):
-            if self.passage_end:
+            if not self.passage_start:
+                #Add verses to END of passage
                 #Check whether passage currently finishes at the end of a chapter
                 if other.end_verse == other.bd.last_verses[other.start_book_n, other.end_chapter]:
                     finishes_at_end_of_chapter = True
@@ -627,6 +628,7 @@ class PassageDelta(object):
                                 end_verse,
                                 end_book_n)
             else:
+                #Add verses to START of passage
                 # Compute chapter difference operation first
                 (start_book_n,
                     start_chapter,
@@ -660,7 +662,7 @@ class PassageDelta(object):
         """
         x.__repr__() <==> x
         """
-        return "PassageDelta(chapters="+repr(self.delta_chapter)+", verses="+repr(self.delta_verse)+", passage_end="+repr(self.passage_end)+")"
+        return "PassageDelta(chapters="+repr(self.delta_chapter)+", verses="+repr(self.delta_verse)+", passage_start="+repr(self.passage_start)+")"
 
 
 def get_passage_text(passage, **kwargs):
