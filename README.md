@@ -162,7 +162,7 @@ Sample code for Django integration is given in the `opt/django/` folder. Submiss
 
 
 ## Has PyPassage been useful to you?
-I would love to hear how you've used PyPassage. Drop me a line: cameronoliver@gmail.com
+I would love to hear how you've used PyPassage. Drop me a line: cameronoliver+pypassage@gmail.com
 
 
 ## See also
