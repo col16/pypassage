@@ -31,7 +31,7 @@ class Passage(object):
                 raise InvalidPassageException()
 
         #Check book end
-        if end_book == None:
+        if end_book == None or end_book == '':
             self.end_book_n = self.start_book_n
         else:
             if isinstance(end_book, int) or isinstance(end_book, long):
@@ -89,7 +89,11 @@ class Passage(object):
                 return False
         else: return False
         #Are start_chapter, start_verse, end_chapter, and end_verse all integers?
-        if not isinstance(self.start_chapter,int) or not isinstance(self.start_verse,int) or not isinstance(self.end_chapter,int) or not isinstance(self.end_verse,int): return False
+        if not isinstance(self.start_chapter,int) or not \
+          isinstance(self.start_verse,int) or not \
+          isinstance(self.end_chapter,int) or not \
+          isinstance(self.end_verse,int):
+            return False
         #Do start/end chapter/verse exist?
         if self.start_chapter < 1 or self.start_verse < 1 or self.end_chapter < 1 or self.end_verse < 1:
             return False
@@ -102,10 +106,13 @@ class Passage(object):
             if self.start_chapter > self.end_chapter:
                 return False
             elif self.start_chapter == self.end_chapter:
-                if self.end_verse < self.start_verse: return False
+                if self.end_verse < self.start_verse:
+                    return False
         #Are either start or end verses missing verses?
-        if self.start_verse in self.bd.missing_verses.get((self.start_book_n, self.start_chapter),[]): return False
-        if self.end_verse in self.bd.missing_verses.get((self.end_book_n, self.end_chapter),[]): return False
+        if self.start_verse in self.bd.missing_verses.get((self.start_book_n, self.start_chapter),[]):
+            return False
+        if self.end_verse in self.bd.missing_verses.get((self.end_book_n, self.end_chapter),[]):
+            return False
         #Everything checked; return True
         return True
     
