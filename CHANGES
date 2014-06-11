@@ -1,0 +1,18 @@
+1.1
+----
+Multi-book support added. New 'end_book' optional parameter for Passage initialisation function.
+New PassageDelta class for extending passages by arbitrary number of verses or chapters 
+Added Passage.text and PassageCollection.text functions
+Deprecated get_passage_text function
+Deprecated Passage.extend function
+Renamed Passage.osisRef function to Passage.osis_reference
+Removed book_total_verses function from Passage object; creating a stand-alone version in its place
+
+1.0
+----
+First public release. PyPassage can:
+- verify that a passage is valid; e.g. telling you that Ephesians 99 and Genesis 3:5-1:2 can't exist
+- render reference strings sensibly; e.g. knowing that Ephesians 1:1-1:23 should be rendered simply as "Ephesians 1" because there are only 23 verses in that chapter
+- fill in missing information where possible; e.g. inferring that for the inputs of book="EPH" and start_chapter=1, the whole Ephesians 1 chapter (verses 1 to 23) was intended
+- count the number of verses in a passage, and truncate or extend a passage to a given number of verses
+- look up actual passage text using external API services

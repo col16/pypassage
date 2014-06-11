@@ -2,12 +2,14 @@
 
 **PyPassage** is a small Python module for working with bible passages/references. It can:
 
-- [verify that a passage is valid](#validity); e.g. telling you that Ephesians 99 and Genesis 3:5-1:2 can't exist
-- [render reference strings sensibly](#reference-strings); e.g. knowing that Ephesians 1:1-1:23 should be rendered simply as "Ephesians 1" because there are only 23 verses in that chapter
-- [fill in missing information where possible](#missing-information); e.g. inferring that for the inputs of `book="EPH"` and `start_chapter=1`, the whole Ephesians 1 chapter (verses 1 to 23) was intended
-- [count the number of verses](#passage-length) in a passage, and [truncate or extend](#passage-truncationextension) a passage to a given number of verses
-- [look up actual passage text](#looking-up-passage-text) using external API services
+- [render reference strings](#reference-strings) sensibly and non-ambiguously; e.g. returning "Ephesians 1" when Ephesians 1:1-1:23 was specified, because there are only 23 verses in that chapter;
+- [look up actual passage text](#looking-up-passage-text) using external API services;
+- [fill in missing information where possible](#missing-information); e.g. inferring that for the inputs of `book="EPH"` and `start_chapter=1`, the whole Ephesians 1 chapter (verses 1 to 23) was intended;
+- [verify that a passage is valid](#validity); e.g. telling you that Ephesians 99 and Genesis 3:5-1:2 can't exist;
+- [add verses or chapters](#extending-a-passage) to the start or end of a passage, or [truncate](#passage-truncation) a passage to a given number of verses; such as for satisfying copyright restrictions; *and*
+- [count the number of verses](#passage-length) in a passage. 
 
+PyPassage now supports **multi-book passages**, such as 'Psalms-Proverbs'.
 
 
 ## Basic Usage
@@ -17,24 +19,20 @@ from pypassage import Passage
 p = Passage(book='Genesis', start_chapter=1, start_verse=1, end_chapter=2, end_verse=3)
 ```
 
-Books may be specified as their full name (e.g. "Revelation"), a three-letter abbreviation (e.g. "Rev"), the standard ESV abbreviation (e.g. "Rv"), or finally, the book number (e.g. 66).
+Books may be specified as their full name (e.g. "Revelation"), a three-letter abbreviation (e.g. "Rev"), or the book number (e.g. 66). Passages with a different ending book are created using the `end_book` parameter:
 
+```python
+>>> str(Passage(book='Genesis', start_chapter=1, start_verse=1, end_chapter=22, end_verse=21, end_book='Rev'))
+'Genesis-Revelation'
+```
 
 ### Missing Information
 
-Not all fields need to be provided. You may for example specify a single verse:
+Not all fields need to be provided. You may for example specify a single verse, a single chapter, or even a complete book:
 ```python
-p = Passage('2 Corinthians',4,7)
-```
-
-or a single chapter
-```python
-p = Passage('Romans',1)
-```
-
-or even a complete book
-```python
-p = Passage('Philippians')
+p_verse = Passage('2 Corinthians',4,7)
+p_chapter = Passage('Romans',1)
+p_book = Passage('Philippians')
 ```
 
 
@@ -44,13 +42,11 @@ Invalid passages will throw an InvalidPassageException on instantiation:
 ```python
 >>> p = Passage('Deu', -3)
 Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "reference.py", line 45, in __init__
-    if (sc and start_chapter < 1) or (sv and start_verse < 1) or (ec and end_chapter < 1) or (ev and end_verse < 1): raise InvalidPassageException()
+  ...
 reference.InvalidPassageException
 ```
 
-Nevertheless, a valid passage may easily be made invalid after instantiation. Thus to check validity, you may call is_valid():
+Nevertheless, a valid passage may easily be made invalid after instantiation. Thus to check validity, you may call `is_valid()`:
 ```python
 >>> p = Passage('2Co',3,12,3,18)
 >>> p.end_verse = 99
@@ -70,7 +66,7 @@ u'John 1:1\u201318'
 ```
 where \u2013 is the unicode en-dash character (used for ranges).
 
-Abbreviated book names can also be used:
+Abbreviated book names can be used:
 ```python
 >>> Passage('John',1,1,1,18).abbr()
 'Jn 1:1-18'
@@ -78,27 +74,25 @@ Abbreviated book names can also be used:
 u'Jn 1:1\u201318'
 ```
 
-Adding together passages will return a PassageCollection object, which in turn can generate strings:
+Adding together passages will return a PassageCollection object, which in turn can generate useful reference strings:
 ```python
->>> c = Passage('Joh',1,1,1,18) + Passage('1Jo',1,1,1,4)
->>> c
-PassageCollection(Passage(book=43, start_chapter=1, start_verse=1, end_chapter=1, end_verse=18), Passage(book=62, start_chapter=1, start_verse=1, end_chapter=1, end_verse=4))
+>>> c = Passage('Joh',1) + Passage('Joh',3) + Passage('Heb',1,1,1,4)
 >>> str(c)
-'John 1:1-18; 1 John 1:1-4'
-```
-
-PassageCollection strings within the same book are grouped together intelligently:
-```python
->>> from pypassage import PassageCollection
->>> unicode(PassageCollection(Passage('Gen',1),Passage('Gen',3),Passage('Gen',5)))
-u'Genesis 1, 3, 5'
+'John 1, 3; Hebrews 1:1-4'
 ```
 
 and where there might be ambiguity, chapters and verses are made explicit:
 ```python
 >>> PassageCollection(Passage('Eph',1),Passage('Gen',3,2),Passage('Gen',3,6),Passage('Gen',8),Passage('Mat',5)).abbr()
-'Eph 1; Gn 3 vv. 2, 6, ch. 8; Mt 5'
+'Eph 1; Gn 3:2, 3:6, 8:1-22; Mt 5'
 ```
+
+[OSIS-formatted](http://www.bibletechnologies.net/) reference strings can also be obtained:
+```python
+>>> Passage('Joh',1).osis_reference()
+'John.1.1-John.1.51'
+```
+
 
 ## Passage Length
 
@@ -108,18 +102,29 @@ The number of verses in a passage may be calculated by calling `len`:
 1533
 ```
 
-### Passage truncation/extension
+### Extending a passage
 
-A passage may be extended or truncated to a specific number of verses:
+Chapters and/or verses can be added to the end of a passage by using the PassageDelta class:
 ```python
->>> str(Passage('Rom',3,21).extend(number_verses=11))
-'Romans 3:21-31'
->>> str(Passage('Rom').truncate(number_verses=200))
-'Romans 1:1-8:14'
+>>> from pypassage import PassageDelta
+>>> str(Passage('Rom',3,21) + PassageDelta(verses=5))
+'Romans 3:21-26'
+>>> str(Passage('Rom',1,1) + PassageDelta(chapters=1, verses=10))
+'Romans 1:1-2:11'
 ```
 
-Both functions also accept proportion_of_book arguments:
+To add verses to the start to the passage, set passage_start=True:
 ```python
+>>> str(Passage('Rom',3,21) + PassageDelta(verses=2, passage_start=True))
+'Romans 3:19-21'
+```
+
+### Passage truncation
+
+A passage may be truncated if it exceeds a specific number of verses or proportion of the book:
+```python
+>>> str(Passage('Rom').truncate(number_verses=200))
+'Romans 1:1-8:14'
 >>> str(Passage('Ephesians').truncate(proportion_of_book=0.5))
 'Ephesians 1:1-4:11'
 ```
@@ -141,7 +146,7 @@ Passage text can be looked up, using the [ESV API](http://www.esvapi.org/) servi
 ('   In the beginning, God created the heavens and the earth.', False)
 ```
 
-Full html may be fetched, and a dictionary of custom [options](http://www.esvapi.org/api) passed in:
+Full HTML may be fetched, and a dictionary of custom [options](http://www.esvapi.org/api) passed in:
 ```python
 >>> get_passage_text(Passage('Gen',1,1), html=True, options={"include-headings":"true"})
 ('<div class="esv">\n<div class="esv-text"><h3 id="p01001001.01-1">The Creation of the World</h3>\n<p class="chapter-first" id="p01001001.06-1"><span class="chapter-num" id="v01001001-1">1:1&nbsp;</span>In the beginning, God created the heavens and the earth.</p>\n</div>\n</div>', False)
@@ -152,13 +157,14 @@ Results are cached (for the same option set) by default using a simple in-memory
 At this stage passage data is based only on the ESV bible, but data for additional translations may readily be added (and are welcomed to this project). In the future it is intended that this module will parse arbitrary passage strings, but at this stage book, chapter, and verse must be directly specified.
 
 
-
-# Miscellaneous
 ## Django integration
 Sample code for Django integration is given in the `opt/django/` folder. Submission of similar code for other frameworks is welcome!
 
-## Unit tests
-A comprehensive set of unit tests are included, which can be run from the command line.
+
+## Has PyPassage been useful to you?
+I would love to hear how you've used PyPassage. Drop me a line: cameronoliver+pypassage@gmail.com
+
 
 ## See also
-[python-bible](https://github.com/jasford/python-bible) is a very similar Python module and will be of interest to anyone evaluating a project such as this. [python-scriptures](https://github.com/davisd/python-scriptures) is a package that can extract bible references from plain text.
+- [python-scriptures](https://github.com/davisd/python-scriptures)
+- [python-bible](https://github.com/jasford/python-bible)
