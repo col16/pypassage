@@ -134,54 +134,68 @@ CACHE_CONSECUTIVE_VERSES = 500
 book_limits = dict([(k,v*CACHE_TOTAL_PROPORTION_OF_BOOK) for (k,v) in number_verses_in_book.items()])
 default_cache = SimpleCache(CACHE_CONSECUTIVE_VERSES, book_limits)
 
-def get_passage_text(passage, api_key="", html = False, options = {}, cache = default_cache):
+def get_passage_text(passage, api_key="", html = False, options = {},
+	cache = default_cache):
 	"""
-	Fetch biblical text (in ESV translation) corresponding to the provided Passage object.
-	Returns tuple of (passage_text, truncated), where 'truncated' is a boolean indicating whether passage was shortened to comply with API conditions.
-		'cache' is a dictionary-like object or function that stores tuples of (book_n, passage_length, passage_text) keyed to params string
-		'html' is a boolean indicating whether function should return passage in html format or plain-text format
-	NB: 'passage' may be any object that returns a string representation of itself with str(passage), the total number of verses it contains with len(passage), and the book number with passage.book_n.
+	Fetch biblical text (in ESV translation) corresponding to the provided
+	Passage object. Returns tuple of (passage_text, truncated), where
+	'truncated' is a boolean indicating whether passage was shortened to comply
+	with API conditions.
+	Parameters:
+	'passage' is any object that returns a string representation of
+		itself with str(passage), the total number of verses it contains with
+		len(passage), and the book number with passage.book_n.
+	'api_key' is an alphanumeric code provided by the ESV API at
+		https://api.esv.org/account/
+	'options' is a dict of custom parameters, as per
+		https://api.esv.org/v3/docs/
+	'html' is a boolean indicating whether function should return passage in
+		html format or plain-text format
+	'cache' is a dictionary-like object or function that stores tuples of
+		(book_n, passage_length, passage_text) keyed to params string.
 	"""
-	#Set default variables
-	vars = {
-		"include-headings":"false",
-		"include-footnotes":"false",
-		"include-audio-link":"false",
-		"include-passage-references":"false",
-		"include-short-copyright":"false" }
+	#Set default parameters
+	params = {
+		"include-headings": "false",
+		"include-footnotes": "false",
+		"include-audio-link": "false",
+		"include-passage-references": "false",
+		"include-short-copyright": "false"
+	}
 	url = "https://api.esv.org/v3/passage/html/"
 	#If we're just wanting plain-text:
 	if not html:
-		vars["include-verse-numbers"] = "false"
-		vars["include-first-verse-numbers"] = "false"
-		vars["include-passage-horizontal-lines"] = "false"
-		vars["include-heading-horizontal-lines"] = "false"
-		vars["line-length"] = 0
+		params.update({
+				"include-verse-numbers": "false",
+				"include-first-verse-numbers": "false",
+				"include-passage-horizontal-lines": "false",
+				"include-heading-horizontal-lines": "false",
+				"line-length": 0,
+			})
 		url = "https://api.esv.org/v3/passage/text/"
 	#Add in user-defined variables (possibly overwriting defaults)
-	for k, v in options.items():
-		vars[k] = v
+	params.update(options)
 	#Truncate passage to API limits, as necessary
-	trun_pass = passage.truncate(API_CONSECUTIVE_VERSES, API_TOTAL_PROPORTION_OF_BOOK)
+	trun_pass = passage.truncate(API_CONSECUTIVE_VERSES,
+		API_TOTAL_PROPORTION_OF_BOOK)
 	if trun_pass is passage:
 		truncated = False
 	else:
 		truncated = True
 	#Add in passage reference
-	vars["q"] = str(trun_pass)
-
+	params["q"] = str(trun_pass)
 	#Construct parameters string from sorted variables
-	params = urllib.urlencode( tuple(sorted(vars.items(), cmp=lambda x,y: cmp(x[0], y[0]))) )
+	param_string = urllib.urlencode(params.items())
 	#Check cache
-	if cache.get(params, None) != None:
-		return (cache[params][2], truncated)
+	if cache.get(param_string, None) != None:
+		return (cache[param_string][2], truncated)
 	#Get text from ESV webservice
 	try:
-		q = Request(url+"?"+params)
+		q = Request(url+"?"+param_string)
 		q.add_header("Authorization", "Token "+api_key)
 		response = json.loads(urlopen(q).read())
 		text = "".join(response["passages"])
-		cache[params] = (trun_pass.book_n, len(trun_pass), text)
+		cache[param_string] = (trun_pass.book_n, len(trun_pass), text)
 		return (text, truncated)
 	except IOError:
 		return ("Error: Could not fetch passage text!", truncated)
