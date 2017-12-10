@@ -115,6 +115,11 @@ for b, vv in enumerate(last_verse_data):
 
 
 import urllib
+try:
+    from urllib.request import Request, urlopen  # Python 3
+except:
+    from urllib2 import Request, urlopen  # Python 2
+import json
 from text_cache import SimpleCache
 
 API_TOTAL_PROPORTION_OF_BOOK = 0.5
@@ -125,7 +130,7 @@ CACHE_CONSECUTIVE_VERSES = 500
 book_limits = dict([(k,v*CACHE_TOTAL_PROPORTION_OF_BOOK) for (k,v) in number_verses_in_book.items()])
 default_cache = SimpleCache(CACHE_CONSECUTIVE_VERSES, book_limits)
 
-def get_passage_text(passage, html = False, options = {}, cache = default_cache):
+def get_passage_text(passage, api_key="", html = False, options = {}, cache = default_cache):
     """
     Fetch biblical text (in ESV translation) corresponding to the provided Passage object.
     Returns tuple of (passage_text, truncated), where 'truncated' is a boolean indicating whether passage was shortened to comply with API conditions.
@@ -134,20 +139,20 @@ def get_passage_text(passage, html = False, options = {}, cache = default_cache)
     NB: 'passage' may be any object that returns a string representation of itself with str(passage), the total number of verses it contains with len(passage), and the book number with passage.book_n.
     """
     #Set default variables
-    vars = { "key": "IP",
-             "include-headings":"false",
+    vars = { "include-headings":"false",
              "include-footnotes":"false",
              "include-audio-link":"false",
              "include-passage-references":"false",
              "include-short-copyright":"false" }
+    url = "https://api.esv.org/v3/passage/html/"
     #If we're just wanting plain-text:
     if not html:
-        vars["output-format"] = "plain-text"
         vars["include-verse-numbers"] = "false"
         vars["include-first-verse-numbers"] = "false"
         vars["include-passage-horizontal-lines"] = "false"
         vars["include-heading-horizontal-lines"] = "false"
         vars["line-length"] = 0
+        url = "https://api.esv.org/v3/passage/text/"
     #Add in user-defined variables (possibly overwriting defaults)
     for k, v in options.items():
         vars[k] = v
@@ -158,7 +163,8 @@ def get_passage_text(passage, html = False, options = {}, cache = default_cache)
     else:
        truncated = True
     #Add in passage reference
-    vars["passage"] = str(trun_pass)
+    vars["q"] = str(trun_pass)
+
     #Construct parameters string from sorted variables
     params = urllib.urlencode( tuple(sorted(vars.items(), cmp=lambda x,y: cmp(x[0], y[0]))) )
     #Check cache
@@ -166,7 +172,10 @@ def get_passage_text(passage, html = False, options = {}, cache = default_cache)
        return (cache[params][2], truncated)
     #Get text from ESV webservice
     try:
-       text = urllib.urlopen("http://www.esvapi.org/v2/rest/passageQuery?"+params).read()
+       q = Request(url+"?"+params)
+       q.add_header("Authorization", "Token "+api_key)
+       response = json.loads(urlopen(q).read())
+       text = "".join(response["passages"])
        cache[params] = (trun_pass.book_n, len(trun_pass), text)
        return (text, truncated)
     except IOError:

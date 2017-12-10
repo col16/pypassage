@@ -264,9 +264,9 @@ class TestPassageCollection(unittest.TestCase):
 
 class TestPassageLookup(unittest.TestCase):
     def test_esv(self):
-        self.assertEqual(bd.get_passage_text(P('Gen',1,1))[0], '   In the beginning, God created the heavens and the earth.')
-        self.assertEqual(bd.get_passage_text(P('Gen',1,1),options={"include-passage-references":"true"})[0], 'Genesis 1:1\n   In the beginning, God created the heavens and the earth.')
-        self.assertEqual(bd.get_passage_text(P('Gen',1,1))[0], '   In the beginning, God created the heavens and the earth.') #repeated, just to make sure cache didn't remember previous options
+        self.assertEqual(bd.get_passage_text(P('Gen',1,1))[0], '  In the beginning, God created the heavens and the earth.\n\n')
+        self.assertEqual(bd.get_passage_text(P('Gen',1,1),options={"include-passage-references":"true"})[0], 'Genesis 1:1\n\n  In the beginning, God created the heavens and the earth.\n\n')
+        self.assertEqual(bd.get_passage_text(P('Gen',1,1))[0], '  In the beginning, God created the heavens and the earth.\n\n') #repeated, just to make sure cache didn't remember previous options
     def test_cache(self):
         #Initialise cache, setting total-consecutive-verse limit to 500 and proportion-of-book limit to 0.5
         book_limits = dict([(k,v*0.5) for (k,v) in bd.number_verses_in_book.items()])

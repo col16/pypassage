@@ -6,6 +6,7 @@ from django.db import models
 from django.core.validators import ValidationError
 from pypassage import Passage, InvalidPassageException, get_passage_text
 from pypassage.bibledata import book_names
+from django.conf import settings
 
 #List of (book_n, name) tuples for dropdown list of bible books
 book_choices = [(p[1][0], p[1][1]) for p in sorted(book_names.items(),cmp=lambda x,y: cmp(x[0], y[0]))]
@@ -68,7 +69,7 @@ class BiblePassage(models.Model):
                     self.build_object()
                 except InvalidPassageException, e:
                     return u"Invalid passage"
-        (text, self.truncated) = get_passage_text(self.p, **kwargs)
+        (text, self.truncated) = get_passage_text(self.p, api_key=settings.ESV_API_KEY, **kwargs)
         return text
 
     def was_truncated(self):
