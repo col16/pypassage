@@ -2,28 +2,32 @@ from reference import PassageCollection as C, Passage as P, InvalidPassageExcept
 import bibledata.esv as bd
 from bibledata import text_cache
 import unittest
+try:
+	from settings import ESV_API_KEY
+except ImportError:
+	ESV_API_KEY = ""
 
 class TestBookData(unittest.TestCase):
 
 	def test_last_verses(self):
-		for (book_number, chapters) in bd.number_chapters.items():
+		for (book_number, chapters) in list(bd.number_chapters.items()):
 			for chapter in range(1,chapters+1):
 				if bd.last_verses.get((book_number,chapter),None) == None:
 					self.fail("Could not find last_verses for book "+str(book_number)+" and chapter "+str(chapter))
 			if bd.last_verses.get((book_number,chapters+1),None) != None:
 				self.fail("last_verses found for book "+str(book_number)+" and chapter "+str(chapter)+", when this book was only supposed to have "+str(chapters)+" chapters")
-		for ((book_number, chapter), verses) in bd.missing_verses.items():
+		for ((book_number, chapter), verses) in list(bd.missing_verses.items()):
 			for verse in verses:
 				if verse >= bd.last_verses[book_number,chapter]: self.fail("missing verse greater than or equal to corresponding last verse")
 
 	def test_number_chapters_in_bible_A(self):
-		self.assertEqual(len(bd.last_verses.items()), 1189)
+		self.assertEqual(len(list(bd.last_verses.items())), 1189)
 	def test_number_chapters_in_bible_B(self):
-		self.assertEqual(sum([chapters for (book, chapters) in bd.number_chapters.items()]), 1189)
+		self.assertEqual(sum([chapters for (book, chapters) in list(bd.number_chapters.items())]), 1189)
 	def test_sum_of_last_verses(self):
-		self.assertEqual(sum([verses for (book_chapter,verses) in bd.last_verses.items()]), 31103)
+		self.assertEqual(sum([verses for (book_chapter,verses) in list(bd.last_verses.items())]), 31103)
 	def test_number_missing_verses(self):
-		self.assertEqual(sum([len(x) for (book_chapter,x) in bd.missing_verses.items()]), 17)
+		self.assertEqual(sum([len(x) for (book_chapter,x) in list(bd.missing_verses.items())]), 17)
 	def test_number_verses_in_book(self):
 		self.assertEqual(bd.number_verses_in_book[62], 105)
 
@@ -264,28 +268,29 @@ class TestPassageCollection(unittest.TestCase):
 
 class TestPassageLookup(unittest.TestCase):
 	def test_esv(self):
-		self.assertEqual(bd.get_passage_text(P('Gen',1,1))[0], '  In the beginning, God created the heavens and the earth.\n\n')
-		self.assertEqual(bd.get_passage_text(P('Gen',1,1),options={"include-passage-references":"true"})[0], 'Genesis 1:1\n\n  In the beginning, God created the heavens and the earth.\n\n')
-		self.assertEqual(bd.get_passage_text(P('Gen',1,1))[0], '  In the beginning, God created the heavens and the earth.\n\n') #repeated, just to make sure cache didn't remember previous options
+		self.assertEqual(bd.get_passage_text(P('Gen',1,1), api_key=ESV_API_KEY)[0], '  In the beginning, God created the heavens and the earth.\n\n')
+		self.assertEqual(bd.get_passage_text(P('Gen',1,1), api_key=ESV_API_KEY,options={"include-passage-references":"true"})[0], 'Genesis 1:1\n\n  In the beginning, God created the heavens and the earth.\n\n')
+		self.assertEqual(bd.get_passage_text(P('Gen',1,1), api_key=ESV_API_KEY)[0], '  In the beginning, God created the heavens and the earth.\n\n') #repeated, just to make sure cache didn't remember previous options
 	def test_cache(self):
 		#Initialise cache, setting total-consecutive-verse limit to 500 and proportion-of-book limit to 0.5
-		book_limits = dict([(k,v*0.5) for (k,v) in bd.number_verses_in_book.items()])
+		book_limits = dict([(k,v*0.5) for (k,v) in list(bd.number_verses_in_book.items())])
 		sc = text_cache.SimpleCache(500, book_limits)
 		#Testing using Genesis, which has 1533 verses in it. 50% of book is 766 verses.
 		#This should put 31 verses into cache
-		(p,t) = bd.get_passage_text(P('Genesis',1), cache=sc)
+		(p,t) = bd.get_passage_text(P('Genesis',1), api_key=ESV_API_KEY, cache=sc)
+
 		self.assertEqual(len(sc.cache),1)
 		self.assertEqual(t,False) #passage should not have been tuncated
 		#Add another 25 verses into cache (just checking normal behaviour)
-		(p,t) = bd.get_passage_text(P('Genesis',2), cache=sc)
+		(p,t) = bd.get_passage_text(P('Genesis',2), api_key=ESV_API_KEY, cache=sc)
 		self.assertEqual(len(sc.cache),2)
 		self.assertEqual(t,False)
 		#Now add a long passage: 711 verses. This should be truncated to 500 verses, and thus allow us to add another 210 verses to the cache. If it's not truncated however it will push us one verse over the 50% of book limit.
-		(p,t) = bd.get_passage_text(P('Genesis',3,1,27,39), cache=sc)
+		(p,t) = bd.get_passage_text(P('Genesis',3,1,27,39), api_key=ESV_API_KEY, cache=sc)
 		self.assertEqual(t,True) #passage should have been truncated
 		self.assertEqual(len(sc.cache),3)
 		#Now add something that should push two references out of the cache
-		(p,t) = bd.get_passage_text(P('Genesis',27,40,34,28), cache=sc)
+		(p,t) = bd.get_passage_text(P('Genesis',27,40,34,28), api_key=ESV_API_KEY, cache=sc)
 		self.assertEqual(len(sc.cache),2)
 		self.assertEqual(t,False)
 

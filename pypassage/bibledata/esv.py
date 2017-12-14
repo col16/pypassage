@@ -12,7 +12,7 @@ last_verses     | (book number, chapter) | last verse of that chapter
 In addition, the get_passage_text function is provided to look up passage text for a given passage.
 """
 
-from common import book_names, book_numbers
+from .common import book_names, book_numbers
 
 #List recording the last verse in each chapter of each book in the bible. e.g last verse in Leviticus chapter 5 is last_verse_data[2][4].
 last_verse_data =  [
@@ -117,14 +117,15 @@ for b, vv in enumerate(last_verse_data):
 		total_verses += last_verse - len(missing_verses.get((book,chapter),[]))
 	number_verses_in_book[book] = total_verses
 
-
-import urllib
 try:
-	from urllib.request import Request, urlopen  # Python 3
-except:
-	from urllib2 import Request, urlopen  # Python 2
+    from urllib.parse import urlencode
+    from urllib.request import urlopen, Request
+except ImportError: # Python 2
+    from urllib import urlencode
+    from urllib2 import urlopen, Request
+
 import json
-from text_cache import SimpleCache
+from .text_cache import SimpleCache
 
 API_TOTAL_PROPORTION_OF_BOOK = 0.5
 API_CONSECUTIVE_VERSES = 500
@@ -185,7 +186,7 @@ def get_passage_text(passage, api_key="", html = False, options = {},
 	#Add in passage reference
 	params["q"] = str(trun_pass)
 	#Construct parameters string from sorted variables
-	param_string = urllib.urlencode(params.items())
+	param_string = urlencode(list(params.items()))
 	#Check cache
 	if cache.get(param_string, None) != None:
 		return (cache[param_string][2], truncated)

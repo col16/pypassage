@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import bibledata
 from collections import defaultdict
+from operator import itemgetter
+from builtins import int #subclass of long on Py2
 
 ## Long term ##
 #Implement string parsing
@@ -19,7 +21,7 @@ class Passage:
 		self.bd = bd = bible_data(translation)
 
 		#Check book
-		if isinstance(book, int) or isinstance(book, long):
+		if isinstance(book, int):
 			#Book has been provided as an integer (1-66)
 			self.book_n = int(book)
 			if self.book_n > 66 or self.book_n < 1:
@@ -257,7 +259,7 @@ class Passage:
 		x.__unicode__() <==> unicode(x)
 		Return unicode version of passage string, using en-dash for ranges.
 		"""
-		return unicode(self.reference_string(dash=u"–"))
+		return self.reference_string(dash=u"–")
 	
 	def abbr(self):
 		""" Return abbreviated passage string """
@@ -265,14 +267,14 @@ class Passage:
 	
 	def uabbr(self):
 		""" Return unicode-type abbreviated passage string, using en-dash for ranges. """
-		return unicode(self.reference_string(abbreviated=True, dash=u"–"))
+		return self.reference_string(abbreviated=True, dash=u"–")
 	
 	def __len__(self):
 		"""
 		x.__len__() <==> len(x)
 		Return number of verses in passage.
 		"""
-		return int(self.number_verses())
+		return self.number_verses()
 	
 	def __repr__(self):
 		"""
@@ -422,7 +424,7 @@ class PassageCollection(list):
 		x.__unicode__() <==> unicode(x)
 		Return unicode version of passage string. Uses en-dash for ranges.
 		"""
-		return unicode(self.reference_string(dash=u"–"))
+		return self.reference_string(dash=u"–")
 	
 	def abbr(self):
 		"""
@@ -434,7 +436,7 @@ class PassageCollection(list):
 		"""
 		Return unicode-type abbreviated passage string. Uses en-dash for ranges.
 		"""
-		return unicode(self.reference_string(abbreviated=True, dash=u"–"))
+		return self.reference_string(abbreviated=True, dash=u"–")
 	
 	def __repr__(self):
 		"""
@@ -517,7 +519,7 @@ class MCBGroup:
 				return str(reference.start_verse) + dash + str(reference.end_verse)
 
 		#List of passage bunches, sorted by order-of-addition
-		ordered_bunches = sorted(self.bunches.items(), cmp=lambda x,y: cmp(x[0], y[0]) )
+		ordered_bunches = sorted(list(self.bunches.items()), key=itemgetter(0))
 		
 		#Iterate through bunches, creating their textual representations
 		textual_bunches = []
