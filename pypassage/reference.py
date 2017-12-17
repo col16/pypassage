@@ -3,6 +3,7 @@ import bibledata
 from collections import defaultdict
 from operator import itemgetter
 from builtins import int #subclass of long on Py2
+import warnings
 
 ## Long term ##
 #Implement string parsing
@@ -215,7 +216,7 @@ class Passage(object):
 
 		For example:
 		>>> Passage('Gen').truncate(number_verses=150)
-		Passage(book=1, start_chapter=1, start_verse=1, end_chapter=6, end_verse=12)
+		Passage(book=1, start_chapter=1, start_verse=1, end_book=1, end_chapter=6, end_verse=12)
 
 		"""
 		#Check current length and length of limits
@@ -279,10 +280,11 @@ class Passage(object):
 		
 		For example, returning the first 50% of the verses in Genesis:
 		>>> Passage('Gen',1,1).extend(proportion_of_book=0.5)
-		Passage(book=1, start_chapter=1, start_verse=1, end_chapter=27, end_verse=38)
+		Passage(book=1, start_chapter=1, start_verse=1, end_book=1, end_chapter=27, end_verse=38)
 		
 		"""
-		print("Deprecated function; does not understand multi-book passages. Use PassageDelta object instead.")
+		warnings.warn("Deprecated function; does not understand multi-book "+\
+			"passages. Use PassageDelta object instead.", DeprecationWarning)
 		#First check if starting reference is valid:
 		if (self.start_book_n > 66 or self.start_book_n < 1) or (self.start_chapter < 1 or self.start_chapter > self.bd.number_chapters[self.start_book_n]) or (self.start_verse < 1 or self.start_verse > self.bd.last_verses[self.start_book_n, self.start_chapter]): return None
 		#Check current length and length of limits
@@ -291,7 +293,9 @@ class Passage(object):
 		if number_verses != None:
 			if number_verses > limit: limit = number_verses
 		if proportion_of_book != None:
-			verses = int(proportion_of_book * book_total_verses(self.bd, self.start_book_n))
+			total_verses_dict = book_total_verses(self.bd, self.start_book_n)
+			total_verses = total_verses_dict[self.start_book_n]
+			verses = int(proportion_of_book * total_verses)
 			if verses > limit: limit = verses
 		if current_length >= limit:
 			#No need to extend; return as-is.
@@ -678,7 +682,8 @@ class PassageDelta(object):
 
 def get_passage_text(passage, **kwargs):
 	""" Get text of supplied Passage object """
-	print("Deprecated function; use Passage.text or PassageCollection.text instead")
+	warnings.warn("Deprecated function; use Passage.text or "+\
+		"PassageCollection.text instead", DeprecationWarning)
 	translation = kwargs.get('translation',"ESV")
 	return bible_data(translation).get_passage_text(passage, **kwargs)
 
