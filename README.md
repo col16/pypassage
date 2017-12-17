@@ -43,7 +43,7 @@ Invalid passages will throw an InvalidPassageException on instantiation:
 >>> p = Passage('Deu', -3)
 Traceback (most recent call last):
   ...
-reference.InvalidPassageException
+pypassage.reference.InvalidPassageException
 ```
 
 Nevertheless, a valid passage may easily be made invalid after instantiation. Thus to check validity, you may call `is_valid()`:
@@ -83,6 +83,7 @@ Adding together passages will return a PassageCollection object, which in turn c
 
 and where there might be ambiguity, chapters and verses are made explicit:
 ```python
+>>> from pypassage import PassageCollection
 >>> PassageCollection(Passage('Eph',1),Passage('Gen',3,2),Passage('Gen',3,6),Passage('Gen',8),Passage('Mat',5)).abbr()
 'Eph 1; Gn 3:2, 3:6, 8:1-22; Mt 5'
 ```
@@ -126,7 +127,7 @@ A passage may be truncated if it exceeds a specific number of verses or proporti
 >>> str(Passage('Rom').truncate(number_verses=200))
 'Romans 1:1-8:14'
 >>> str(Passage('Ephesians').truncate(proportion_of_book=0.5))
-'Ephesians 1:1-4:11'
+'Ephesians 1:1-4:12'
 ```
 
 Both arguments may provided simultaneously (something that is particularly useful for complying with copyright restrictions). If neither are relevant, the same passage will be returned:
@@ -142,14 +143,14 @@ True
 
 Passage text can be looked up, using the [ESV API](http://www.esvapi.org/) service:
 ```python
->>> get_passage_text(Passage('Gen',1,1))
-('   In the beginning, God created the heavens and the earth.', False)
+>>> Passage('Gen',1,1).text(api_key="XXXX")
+('  In the beginning, God created the heavens and the earth.\n\n', False)
 ```
 
 Full HTML may be fetched, and a dictionary of custom [options](http://www.esvapi.org/api) passed in:
 ```python
->>> get_passage_text(Passage('Gen',1,1), html=True, options={"include-headings":"true"})
-('<div class="esv">\n<div class="esv-text"><h3 id="p01001001.01-1">The Creation of the World</h3>\n<p class="chapter-first" id="p01001001.06-1"><span class="chapter-num" id="v01001001-1">1:1&nbsp;</span>In the beginning, God created the heavens and the earth.</p>\n</div>\n</div>', False)
+>>> Passage('Gen',1,1).text(api_key="XXXX", html=True, options={"include-headings":"true"})
+(u'<h3 id="p01001001_01-1">The Creation of the World</h3>\n<p id="p01001001_06-1" class="starts-chapter"><b class="chapter-num" id="v01001001-1">1:1&nbsp;</b>In the beginning, God created the heavens and the earth.</p>\n', False)
 ```
 
 Results are cached (for the same option set) by default using a simple in-memory object. Custom caches may easily be defined. Please refer to ESV [usage restrictions](http://www.esvapi.org/#conditions) to ensure you use retrieved text in an appropriate manner.

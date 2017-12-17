@@ -386,7 +386,7 @@ class Passage(object):
 		x.__unicode__() <==> unicode(x)
 		Return unicode version of passage string, using en-dash for ranges.
 		"""
-		return str(self.reference_string(dash="–"))
+		return self.reference_string(dash=u"–")
 	
 	def abbr(self):
 		""" Return abbreviated passage string """
@@ -394,7 +394,7 @@ class Passage(object):
 	
 	def uabbr(self):
 		""" Return unicode-type abbreviated passage string, using en-dash for ranges. """
-		return str(self.reference_string(abbreviated=True, dash="–"))
+		return self.reference_string(abbreviated=True, dash=u"–")
 	
 	def __len__(self):
 		"""
@@ -569,7 +569,7 @@ class PassageCollection(list):
 		x.__unicode__() <==> unicode(x)
 		Return unicode version of passage string. Uses en-dash for ranges.
 		"""
-		return str(self.reference_string(dash="–"))
+		return self.reference_string(dash=u"–")
 	
 	def abbr(self):
 		"""
@@ -581,7 +581,7 @@ class PassageCollection(list):
 		"""
 		Return unicode-type abbreviated passage string. Uses en-dash for ranges.
 		"""
-		return str(self.reference_string(abbreviated=True, dash="–"))
+		return self.reference_string(abbreviated=True, dash=u"–")
 	
 	def __repr__(self):
 		"""
