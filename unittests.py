@@ -1,6 +1,6 @@
-from reference import PassageCollection as C, Passage as P, PassageDelta as D, InvalidPassageException
-import bibledata.esv as bd
-from bibledata import text_cache
+from pypassage.reference import PassageCollection as C, Passage as P, PassageDelta as D, InvalidPassageException
+import pypassage.bibledata.esv as bd
+from pypassage.bibledata import text_cache
 import unittest
 try:
 	from settings import ESV_API_KEY

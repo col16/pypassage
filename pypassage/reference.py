@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import bibledata
+from . import bibledata
 from collections import defaultdict
 from operator import itemgetter
 from builtins import int #subclass of long on Py2
