@@ -4,7 +4,7 @@ from distutils.core import setup
 setup(
 	name = "pypassage",
 	packages = ['pypassage','pypassage.bibledata'],
-	version = '1.1',
+	version = '1.2',
 	author = 'Cameron Oliver',
 	author_email = 'cameron.oliver@gmail.com',
 	url = 'https://github.com/col16/pypassage',
@@ -37,6 +37,7 @@ Full documentation may be found on the `GitHub page
 	classifiers = [
 		"Programming Language :: Python",
 		"Programming Language :: Python :: 2.7",
+		"Programming Language :: Python :: 3.6",
 		"License :: OSI Approved :: ISC License (ISCL)",
 		"Operating System :: OS Independent",
 		"Development Status :: 4 - Beta",
