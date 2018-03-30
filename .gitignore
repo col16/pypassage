@@ -5,6 +5,7 @@
 *.py[co]
 settings.py
 MANIFEST
+env/
 dist/
 build/
 pypassage.egg-info/
