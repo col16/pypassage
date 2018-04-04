@@ -10,7 +10,7 @@ from django.conf import settings
 
 # List of (book_n, name) tuples for dropdown list of bible books
 book_choices = [(p[1][0], p[1][1]) for p in sorted(
-    book_names.items(), cmp=lambda x, y: cmp(x[0], y[0]))]
+    list(book_names.items()), key=lambda x: x[0])]
 
 
 class BiblePassage(models.Model):
@@ -44,7 +44,7 @@ class BiblePassage(models.Model):
             self.build_object()
             self.start = self.p.start
             self.end = self.p.end
-        except InvalidPassageException, e:
+        except InvalidPassageException as e:
             pass
 
     def build_object(self):
@@ -57,7 +57,7 @@ class BiblePassage(models.Model):
         """
         try:
             self.build_object()
-        except InvalidPassageException, e:
+        except InvalidPassageException as e:
             raise ValidationError("Invalid passage")
         self.start_book = book_names[self.p.start_book_n][0]
         self.start_chapter = self.p.start_chapter
@@ -76,12 +76,12 @@ class BiblePassage(models.Model):
             # No pypassage object p; attempt to create it
             if getattr(self, 'start_book', '') == '':
                 # Assume passage hasn't yet been initialised; return blank
-                return u""
+                return ""
             else:
                 try:
                     self.build_object()
-                except InvalidPassageException, e:
-                    return u"Invalid passage"
+                except InvalidPassageException as e:
+                    return "Invalid passage"
         (text, self.truncated) = self.p.text(**kwargs)
         return text
 
@@ -95,6 +95,6 @@ class BiblePassage(models.Model):
         if getattr(self, 'p', None) == None:
             try:
                 self.build_object()
-            except InvalidPassageException, e:
-                return u"Invalid passage"
-        return unicode(self.p)
+            except InvalidPassageException as e:
+                return "Invalid passage"
+        return str(self.p)
