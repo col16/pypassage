@@ -5,6 +5,9 @@ setup(
 	name = "pypassage",
 	packages = ['pypassage','pypassage.bibledata'],
 	version = '1.2',
+	install_requires=[
+          'future',
+      ],
 	author = 'Cameron Oliver',
 	author_email = 'cameron.oliver@gmail.com',
 	url = 'https://github.com/col16/pypassage',
