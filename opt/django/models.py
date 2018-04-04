@@ -8,8 +8,9 @@ from pypassage import Passage, InvalidPassageException
 from pypassage.bibledata import book_names
 from django.conf import settings
 
-#List of (book_n, name) tuples for dropdown list of bible books
-book_choices = [(p[1][0], p[1][1]) for p in sorted(book_names.items(),cmp=lambda x,y: cmp(x[0], y[0]))]
+# List of (book_n, name) tuples for dropdown list of bible books
+book_choices = [(p[1][0], p[1][1]) for p in sorted(
+    book_names.items(), cmp=lambda x, y: cmp(x[0], y[0]))]
 
 
 class BiblePassage(models.Model):
@@ -20,19 +21,25 @@ class BiblePassage(models.Model):
     end_chapter = models.IntegerField(blank=True)
     end_verse = models.IntegerField(blank=True)
 
-    #In a church sermon setting, passages are usually readings, primary passages, both, or neither.
-    reading = models.BooleanField(default=False, help_text="Was this passage read out during the service?")
-    primary_passage = models.BooleanField(default=False, help_text="Was this passage the topic of the talk?")
-    
-    #Starting and finishing integers, in order to represent passage starting and endings in purely
-    #numeric form. Primarily useful for efficient database filtering of passages.
-    #First two numerals are book number (eg. Gen = 01 and Rev = 66). Next three numerals are chapter, and
-    #final three numerals are verse. Thus Gen 3:5 is encoded as 001003005.
-    start = models.IntegerField(null=True,editable=False)
-    end = models.IntegerField(null=True,editable=False)
+    # In a church sermon setting, passages are usually readings, primary
+    # passages, both, or neither.
+    reading = models.BooleanField(
+        default=False,
+        help_text="Was this passage read out during the service?")
+    primary_passage = models.BooleanField(
+        default=False, help_text="Was this passage the topic of the talk?")
+
+    # Starting and finishing integers, in order to represent passage starting
+    # and endings in purely numeric form. Primarily useful for efficient
+    # database filtering of passages.
+    # First two numerals are book number (eg. Gen = 01 and Rev = 66). Next
+    # three numerals are chapter, and final three numerals are verse. Thus
+    # Gen 3:5 is encoded as 001003005.
+    start = models.IntegerField(null=True, editable=False)
+    end = models.IntegerField(null=True, editable=False)
 
     def __init__(self, *args, **kwargs):
-        super(BiblePassage,self).__init__(*args, **kwargs)
+        super(BiblePassage, self).__init__(*args, **kwargs)
         try:
             self.build_object()
             self.start = self.p.start
@@ -41,7 +48,8 @@ class BiblePassage(models.Model):
             pass
 
     def build_object(self):
-        self.p = Passage(self.start_book, self.start_chapter, self.start_verse, self.end_chapter, self.end_verse, self.end_book)
+        self.p = Passage(self.start_book, self.start_chapter, self.start_verse,
+                         self.end_chapter, self.end_verse, self.end_book)
 
     def clean(self):
         """
@@ -64,10 +72,10 @@ class BiblePassage(models.Model):
         """
         Fetch biblical text that object represents
         """
-        if getattr(self,'p', None) == None:
-            #No pypassage object p; attempt to create it
-            if getattr(self,'start_book', '') == '':
-                #Assume passage hasn't yet been initialised; return blank
+        if getattr(self, 'p', None) == None:
+            # No pypassage object p; attempt to create it
+            if getattr(self, 'start_book', '') == '':
+                # Assume passage hasn't yet been initialised; return blank
                 return u""
             else:
                 try:
@@ -81,10 +89,10 @@ class BiblePassage(models.Model):
         """
         Return boolean denoting whether text that was fetched was truncated
         """
-        return getattr(self,'truncated', False)
+        return getattr(self, 'truncated', False)
 
     def __unicode__(self):
-        if getattr(self,'p', None) == None:
+        if getattr(self, 'p', None) == None:
             try:
                 self.build_object()
             except InvalidPassageException, e:

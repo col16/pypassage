@@ -408,7 +408,7 @@ class Passage(object):
                 if self.start_verse == self.end_verse:
                     return book + " " + str(self.start_verse)
                 elif self.start_verse == 1 and self.end_verse ==\
-                    self.bd.last_verses[book_n, 1]:
+                        self.bd.last_verses[book_n, 1]:
                     return book
                 else:
                     return book + " " + str(self.start_verse) + dash +\
@@ -424,7 +424,7 @@ class Passage(object):
                         return book + " " + str(self.start_chapter) + ":" +\
                             str(self.start_verse)
                     elif self.start_verse == 1 and self.end_verse ==\
-                        self.bd.last_verses[book_n, self.start_chapter]:
+                            self.bd.last_verses[book_n, self.start_chapter]:
                         return book + " " + str(self.start_chapter)
                     else:
                         return book + " " + str(self.start_chapter) + ":" +\
@@ -432,9 +432,9 @@ class Passage(object):
                 else:
                     book = book_name(self.bd, book_n, abbreviated)
                     if self.start_verse == 1 and self.end_verse ==\
-                        self.bd.last_verses[book_n, self.end_chapter]:
+                            self.bd.last_verses[book_n, self.end_chapter]:
                         if self.start_chapter == 1 and self.end_chapter ==\
-                            self.bd.number_chapters[book_n]:
+                                self.bd.number_chapters[book_n]:
                             return book
                         else:
                             return book + " " + str(self.start_chapter) +\
@@ -447,7 +447,7 @@ class Passage(object):
             first_book = book_name(self.bd, self.start_book_n, abbreviated)
             last_book = book_name(self.bd, self.end_book_n, abbreviated)
             if self.start_verse == 1 and self.end_verse ==\
-                self.bd.last_verses[self.end_book_n, self.end_chapter]:
+                    self.bd.last_verses[self.end_book_n, self.end_chapter]:
                 if self.end_chapter == self.bd.number_chapters[self.end_book_n]:
                     # Whole books
                     return first_book + dash + last_book
@@ -513,9 +513,9 @@ class Passage(object):
         """
         x.__repr__() <==> x
         """
-        return "Passage(book="+repr(self.start_book_n)+", start_chapter="+\
-            repr(self.start_chapter)+", start_verse="+repr(self.start_verse)+\
-            ", end_book="+repr(self.end_book_n)+", end_chapter="+\
+        return "Passage(book="+repr(self.start_book_n)+", start_chapter=" +\
+            repr(self.start_chapter)+", start_verse="+repr(self.start_verse) +\
+            ", end_book="+repr(self.end_book_n)+", end_chapter=" +\
             repr(self.end_chapter)+", end_verse="+repr(self.end_verse)+")"
 
     def __cmp__(self, other):
@@ -626,7 +626,7 @@ class PassageCollection(list):
             else:
                 if group[0].start_book_n != group[0].end_book_n:
                     raise Exception(
-                        "Error: Could not generate reference string. Multi-"+\
+                        "Error: Could not generate reference string. Multi-" +
                         "book passage group but len(group) != 1.")
             if group[0].bd.number_chapters[group[0].start_book_n] == 1:
                 # Group of reference(s) from a single-chapter book
@@ -645,8 +645,10 @@ class PassageCollection(list):
                 if (len(group) == 1 and group[0].complete_book() == 1.0):
                     # Special case where there is only one reference in bunch,
                     # and that reference is for a whole book.
-                    group_strings.append(book_name(group[0].bd,
-                        group[0].start_book_n, abbreviated))
+                    group_strings.append(
+                        book_name(group[0].bd,
+                        group[0].start_book_n,
+                        abbreviated))
                 else:
                     # For readability and simplicity, this part of the algorithm
                     # is within the MCBGroup class
@@ -823,8 +825,8 @@ class PassageDelta(object):
         """
         x.__repr__() <==> x
         """
-        return "PassageDelta(chapters="+repr(self.delta_chapter)+", verses="+\
-            repr(self.delta_verse)+", passage_start="+\
+        return "PassageDelta(chapters="+repr(self.delta_chapter)+", verses=" +\
+            repr(self.delta_verse)+", passage_start=" +\
             repr(self.passage_start)+")"
 
 
@@ -864,7 +866,7 @@ def book_total_verses(bible_data, start_book_n, end_book_n=None):
 
 
 def delta_chapter(chapter_difference, current_book_n, current_chapter,
-    current_verse, bible_data, finishes_at_end_of_chapter=False):
+                  current_verse, bible_data, finishes_at_end_of_chapter=False):
     new_chapter = current_chapter + chapter_difference
     if new_chapter > bible_data.number_chapters[current_book_n]:
         # Got to end of book; need to go to next book
@@ -896,7 +898,7 @@ def delta_chapter(chapter_difference, current_book_n, current_chapter,
 
 
 def delta_verse(verse_difference, current_book_n, current_chapter,
-    current_verse, bible_data):
+                current_verse, bible_data):
     new_verse = current_verse + verse_difference
     if new_verse > bible_data.last_verses[current_book_n, current_chapter]:
         # Got to end of chapter; need to go to next chapter
@@ -911,11 +913,11 @@ def delta_verse(verse_difference, current_book_n, current_chapter,
                 return (current_book_n, c, v)
             else:
                 return delta_verse(overflow_verses, current_book_n+1, 1, 0,
-                    bible_data)
+                                   bible_data)
         else:
             # Next chapter within the same book
             return delta_verse(overflow_verses, current_book_n,
-                current_chapter+1, 0, bible_data)
+                               current_chapter+1, 0, bible_data)
     elif new_verse < 1:
         # Got to start of chapter; need to go to previous chapter
         overflow_verses = new_verse - 1
@@ -928,12 +930,12 @@ def delta_verse(verse_difference, current_book_n, current_chapter,
                 c = bible_data.number_chapters[current_book_n-1]
                 v = bible_data.last_verses[current_book_n-1, c]
                 return delta_verse(overflow_verses, current_book_n-1, c, v+1,
-                    bible_data)
+                                   bible_data)
         else:
             c = current_chapter - 1
             v = bible_data.last_verses[current_book_n, c]
             return delta_verse(overflow_verses, current_book_n, c, v+1,
-                bible_data)
+                               bible_data)
     else:
         return (current_book_n, current_chapter, new_verse)
 
@@ -968,7 +970,7 @@ class MCBGroup(object):
             # Reference is one or more full chapters in length
             if self.last_full_chapter_loc >= 0:
                 # Last reference was a full chapter, so add it to previous
-                #'bunch'
+                # 'bunch'
                 self.bunches[self.last_full_chapter_loc].append(reference)
             else:
                 # Add new bunch
@@ -1021,7 +1023,7 @@ class MCBGroup(object):
                     return str(reference.start_chapter)
                 else:
                     return str(reference.start_chapter) + dash +\
-                    str(reference.end_chapter)
+                        str(reference.end_chapter)
 
         def verses_only(reference):
             # Verse string
@@ -1029,7 +1031,7 @@ class MCBGroup(object):
                 return str(reference.start_verse)
             else:
                 return str(reference.start_verse) + dash +\
-                str(reference.end_verse)
+                    str(reference.end_verse)
 
         # List of passage bunches, sorted by order-of-addition
         ordered_bunches = sorted(list(self.bunches.items()), key=itemgetter(0))
@@ -1041,27 +1043,28 @@ class MCBGroup(object):
             if self.full_chapter_bunch[order]:
                 # All passages in this bunch are for full chapters
                 textual_bunches.append(
-                    ", ".join([full_ch_ref(x, verse_encountered) for x\
-                        in bunch]))
+                    ", ".join([full_ch_ref(x, verse_encountered) for x
+                               in bunch]))
             else:
                 # Not a full-chapter bunch.
                 verse_encountered = True
                 if len(bunch) == 1:
                     # NB: this bunch may be over two or more chapters
                     if bunch[0].start_chapter == bunch[0].end_chapter:
-                        textual_bunches.append(str(bunch[0].start_chapter) +\
-                            ":" + verses_only(bunch[0]))
+                        textual_bunches.append(
+                            str(bunch[0].start_chapter) + ":" +
+                            verses_only(bunch[0]))
                     else:
-                        textual_bunches.append(str(bunch[0].start_chapter) +\
-                            ":" + str(bunch[0].start_verse) + dash +\
-                            str(bunch[0].end_chapter) + ":" +\
+                        textual_bunches.append(
+                            str(bunch[0].start_chapter) + ":" +
+                            str(bunch[0].start_verse) + dash +
+                            str(bunch[0].end_chapter) + ":" +
                             str(bunch[0].end_verse))
-                    pass
                 else:
                     # Guaranteed (via self.add() algorithm) to be within same
                     # chapter
                     textual_bunches.append(", ".join(
-                        [str(bunch[0].start_chapter) + ":" + verses_only(x) for\
+                        [str(bunch[0].start_chapter) + ":" + verses_only(x) for
                             x in bunch]))
         if abbreviated:
             book = bibledata.book_names[self.start_book_n][2]
@@ -1071,7 +1074,7 @@ class MCBGroup(object):
 
 
 def check_reference(bd, start_book_n, start_chapter=None, start_verse=None,
-    end_book_n=None, end_chapter=None, end_verse=None):
+                    end_book_n=None, end_chapter=None, end_verse=None):
     """
     Check and normalise numeric reference inputs (start_chapter, start_verse, end_chapter and end_verse)
     Where possible, missing inputs will be inferred. Thus for example, if start_chapter and end_chapter
@@ -1094,7 +1097,7 @@ def check_reference(bd, start_book_n, start_chapter=None, start_verse=None,
 
     # Require that numbers are not negative.
     if (sc and start_chapter < 1) or (sv and start_verse < 1) or\
-        (ec and end_chapter < 1) or (ev and end_verse < 1):
+            (ec and end_chapter < 1) or (ev and end_verse < 1):
         raise InvalidPassageException(
             "Reference cannot include negative numbers")
 
@@ -1116,7 +1119,7 @@ def check_reference(bd, start_book_n, start_chapter=None, start_verse=None,
             sc = sv = True
 
         if sv and ev and (not sc or start_chapter == 1) and\
-            (not ec or end_chapter == 1):
+                (not ec or end_chapter == 1):
             # Verse range provided properly; start or end chapters either
             # correct (i.e., 1) or missing
             start_chapter = end_chapter = 1
