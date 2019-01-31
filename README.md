@@ -57,21 +57,16 @@ False
 
 ## Reference Strings
 
-String representations of the passage reference can be created by simply calling `str` or `unicode`:
+String representations of the passage reference can be created by simply calling `str`:
 ```python
 >>> str(Passage('John',1,1,1,18))
 'John 1:1-18'
->>> unicode(Passage('John',1,1,1,18))
-u'John 1:1\u201318'
 ```
-where \u2013 is the unicode en-dash character (used for ranges).
 
 Abbreviated book names can be used:
 ```python
 >>> Passage('John',1,1,1,18).abbr()
 'Jn 1:1-18'
->>> Passage('John',1,1,1,18).uabbr()
-u'Jn 1:1\u201318'
 ```
 
 Adding together passages will return a PassageCollection object, which in turn can generate useful reference strings:
@@ -168,4 +163,4 @@ I would love to hear how you've used PyPassage. Drop me a line: cameronoliver+py
 
 ## See also
 - [python-scriptures](https://github.com/davisd/python-scriptures)
-- [python-bible](https://github.com/jasford/python-bible)
+- [python-bible](https://github.com/richardbolt/python-bible)
