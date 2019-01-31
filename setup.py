@@ -4,7 +4,7 @@ from setuptools import setup
 setup(
 	name = "pypassage",
 	packages = ['pypassage','pypassage.bibledata'],
-	version = '1.2',
+	version = '1.3',
 	install_requires=[
           'future',
       ],
