@@ -655,7 +655,7 @@ class TestParsing(unittest.TestCase):
 #        self.assertEqual(passages_from_string("Gen 1:3,5,7;2:4"), C(P('Gen',1,3),P('Gen',1,5),P('Gen',1,7),P('Gen',2,4)) )
 #        self.assertEqual(passages_from_string("Gen 1:3;5;7;2:4"), C(P('Gen',1,3),P('Gen',5),P('Gen',7),P('Gen',2,4)) )
 #        self.assertEqual(passages_from_string("Gen1.1,3.2"), C(P('Gen',1,1),P('Gen',3,2)) )
-       self.assertEqual(passages_from_string("2 Tim 1:1"), P('2Tim',1,1))
+       self.assertEqual(passages_from_string("2 Tm 1:1"), P('2 Tm',1,1))
 #        self.assertEqual(passages_from_string("2Tim 1:1"), C(P('2Ti',1,1)) )
 #        self.assertEqual(passages_from_string("II Tim 1:1"), C(P('2Ti',1,1)) )
 #        self.assertEqual(passages_from_string("Philemon 3-5"), C(P('Phm',start_chapter=3,end_chapter=5)) )
