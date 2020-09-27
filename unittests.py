@@ -330,7 +330,7 @@ class TestPassage(unittest.TestCase):
                                                             start_verse=48, end_chapter=17, end_verse=20))
 
     # Test passage truncation
-    def test_trucation(self):
+    def test_truncation(self):
         # John 1 has 51 verses; truncate to 40
         j1t = P('Joh', 1).truncate(number_verses=40)
         self.assertEqual(len(j1t), 40)
@@ -656,7 +656,7 @@ class TestPassageLookup(unittest.TestCase):
         # This should put 31 verses into cache
         (p, t) = P('Genesis', 1).text(api_key=ESV_API_KEY, cache=sc)
         self.assertEqual(len(sc.cache), 1)
-        self.assertEqual(t, False)  # passage should not have been tuncated
+        self.assertEqual(t, False)  # passage should not have been truncated
         # Add another 25 verses into cache (just checking normal behaviour)
         (p, t) = P('Genesis', 2).text(api_key=ESV_API_KEY, cache=sc)
         self.assertEqual(len(sc.cache), 2)
