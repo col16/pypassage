@@ -10,3 +10,4 @@ env2/
 dist/
 build/
 pypassage.egg-info/
+.idea/
