@@ -4,6 +4,7 @@ from collections import defaultdict
 from operator import itemgetter
 from builtins import int  # subclass of long on Py2
 import warnings
+import re
 
 ## Long term ##
 # Implement string parsing
@@ -1227,6 +1228,23 @@ def bible_data(translation):
         return bibledata.esv
     else:
         return bibledata.esv
+
+
+def passage_from_string(reference: str) -> Passage:
+    reference = reference + ' '
+    parsed = re.match("^(\\d? ?[A-Za-z, ]+[A-Za-z]) ?(\\d+)?:?(\\d+)?-?(\\d+)?", reference)
+    print(parsed.groups())
+    if parsed.groups()[3] is not None:
+        return Passage(book=parsed.groups()[0], start_chapter=int(parsed.groups()[1]),
+                       start_verse=int(parsed.groups()[2]), end_verse=int(parsed.groups()[3]))
+    elif parsed.groups()[2] is not None:
+        return Passage(book=parsed.groups()[0], start_chapter=int(parsed.groups()[1]),
+                       start_verse=int(parsed.groups()[2]))
+    elif parsed.groups()[1] is not None:
+        return Passage(book=parsed.groups()[0], start_chapter=int(parsed.groups()[1]))
+    elif parsed.groups()[0] is not None:
+        return Passage(parsed.groups()[0])
+
 
 
 if __name__ == "__main__":
