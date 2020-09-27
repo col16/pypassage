@@ -1234,7 +1234,7 @@ def passages_from_string(reference):
     """
     Parses strings and returns a Passage object
     :param reference: The string of text to be parsed for a bible verse
-    :return:
+    :return: Passage object
     """
     reference = reference + ' '
     parsed = re.match("^(\\d? ?[A-Za-z, ]+[A-Za-z]) ?(\\d+)?:?(\\d+)?-?(\\d+)?", reference)
