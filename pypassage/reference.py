@@ -1230,10 +1230,14 @@ def bible_data(translation):
         return bibledata.esv
 
 
-def passage_from_string(reference: str) -> Passage:
+def passages_from_string(reference):
+    """
+    Parses strings and returns a Passage object
+    :param reference: The string of text to be parsed for a bible verse
+    :return:
+    """
     reference = reference + ' '
     parsed = re.match("^(\\d? ?[A-Za-z, ]+[A-Za-z]) ?(\\d+)?:?(\\d+)?-?(\\d+)?", reference)
-    print(parsed.groups())
     if parsed.groups()[3] is not None:
         return Passage(book=parsed.groups()[0], start_chapter=int(parsed.groups()[1]),
                        start_verse=int(parsed.groups()[2]), end_verse=int(parsed.groups()[3]))
@@ -1244,7 +1248,6 @@ def passage_from_string(reference: str) -> Passage:
         return Passage(book=parsed.groups()[0], start_chapter=int(parsed.groups()[1]))
     elif parsed.groups()[0] is not None:
         return Passage(parsed.groups()[0])
-
 
 
 if __name__ == "__main__":

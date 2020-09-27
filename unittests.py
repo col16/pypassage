@@ -2,6 +2,7 @@ from pypassage.reference import PassageCollection as C
 from pypassage.reference import Passage as P
 from pypassage.reference import PassageDelta as D
 from pypassage.reference import InvalidPassageException
+from pypassage.reference import passages_from_string
 import pypassage.bibledata.esv as bd
 from pypassage.bibledata import text_cache
 import unittest
@@ -632,15 +633,15 @@ class TestPassageLookup(unittest.TestCase):
 		self.assertEqual(t,False)
 
 
-#class TestParsing(unittest.TestCase):
-#    def test_reference_string_parsing(self):
-#        self.assertEqual(passages_from_string("Gen"), C(P('Gen')) )
-#        self.assertEqual(passages_from_string("Genesis"), C(P('Gen')) )
-#        self.assertEqual(passages_from_string("Gen 1"), C(P('Gen',1)) )
-#        self.assertEqual(passages_from_string("Gen 1:1"), C(P('Gen',1,1)) )
+class TestParsing(unittest.TestCase):
+   def test_reference_string_parsing(self):
+       self.assertEqual(passages_from_string("Gen"), P('Gen') )
+       self.assertEqual(passages_from_string("Genesis"), P('Gen') )
+       self.assertEqual(passages_from_string("Gen 1"), P('Gen',1) )
+       self.assertEqual(passages_from_string("Gen 1:1"), P('Gen',1,1) )
 #        self.assertEqual(passages_from_string("Gen 1:1a"), C(P('Gen',1,1)) )
 #        self.assertEqual(passages_from_string("Gen 1:1b"), C(P('Gen',1,1)) )
-#        self.assertEqual(passages_from_string("Gen 1:1-3"), C(P('Gen',1,1,1,3)) )
+       self.assertEqual(passages_from_string("Gen 1:1-3"), P('Gen',1,1,1,3) )
 #        self.assertEqual(passages_from_string("Gen 1:1-2:4"), C(P('Gen',1,1,2,4)) )
 #        self.assertEqual(passages_from_string("Gen 1-2"), C(P('Gen',start_chapter=1,end_chapter=2)) )
 #        self.assertEqual(passages_from_string("Gen 1-3:2"), C() ) #invalid; should not return any passage
@@ -654,11 +655,11 @@ class TestPassageLookup(unittest.TestCase):
 #        self.assertEqual(passages_from_string("Gen 1:3,5,7;2:4"), C(P('Gen',1,3),P('Gen',1,5),P('Gen',1,7),P('Gen',2,4)) )
 #        self.assertEqual(passages_from_string("Gen 1:3;5;7;2:4"), C(P('Gen',1,3),P('Gen',5),P('Gen',7),P('Gen',2,4)) )
 #        self.assertEqual(passages_from_string("Gen1.1,3.2"), C(P('Gen',1,1),P('Gen',3,2)) )
-#        self.assertEqual(passages_from_string("2 Tim 1:1"), C(P('2Tim',1,1)) )
+       self.assertEqual(passages_from_string("2 Tim 1:1"), P('2Tim',1,1))
 #        self.assertEqual(passages_from_string("2Tim 1:1"), C(P('2Ti',1,1)) )
 #        self.assertEqual(passages_from_string("II Tim 1:1"), C(P('2Ti',1,1)) )
 #        self.assertEqual(passages_from_string("Philemon 3-5"), C(P('Phm',start_chapter=3,end_chapter=5)) )
-#        self.assertEqual(passages_from_string("Matt and Tim are cool"), C() ) #should not return any passage
+#        self.assertEqual(passages_from_string("Matt and Tim are cool"), () ) #should not return any passage
 #        self.assertEqual(passages_from_string("Matthew and John went skiing"), C() ) #should not return any passage
 #        self.assertEqual(passages_from_string("love, 2 Cor"), C(P('2Co')) )
 #        self.assertEqual(passages_from_string("Gen 3: the fall"), C(P('Gen',3)) )

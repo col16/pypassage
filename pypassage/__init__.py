@@ -4,4 +4,4 @@ from .reference import PassageDelta
 from .reference import InvalidPassageException
 from .reference import book_total_verses
 from .reference import get_passage_text
-from .reference import passage_from_string
+from .reference import passages_from_string
