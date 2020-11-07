@@ -4,6 +4,7 @@ from collections import defaultdict
 from operator import itemgetter
 from builtins import int  # subclass of long on Py2
 import warnings
+import re
 
 ## Long term ##
 # Implement string parsing
@@ -1227,6 +1228,43 @@ def bible_data(translation):
         return bibledata.esv
     else:
         return bibledata.esv
+
+
+passage_regex = re.compile( #this uses (?: ) as a non-capturing version of parentheses
+    r"(?P<book>(?:\d )?[a-z]+(?: [a-z]+)*)"+\
+    "(?: ?"+\
+        "(?P<start_chapter>\d+)(?:\:(?P<start_verse>\d+))?"+\
+        "(?:-"+\
+            "(?P<end_chapter>\d+))?(?:\:(?P<end_verse>\d+)"+\
+        ")?"+\
+    ")?$", re.IGNORECASE)
+def passages_from_string(reference):
+    """
+    Parses strings and returns a Passage object
+    :param reference: The string of text to be parsed for a bible verse
+    :return: Passage object
+    """
+    d = passage_regex.match(reference)
+
+    if d == None:
+        return ()
+    else:
+        d = d.groupdict()
+    # If Gen 1:2-3 is entered (for example), it's reasonable to assume that
+    # the 3 is a verse not a chapter
+    if d['end_verse'] == None and d['start_verse'] != None:
+        d['end_verse'] = d['end_chapter']
+        d['end_chapter'] = None
+    #Convert to integers
+    if d['start_chapter'] != None: d['start_chapter'] = int(d['start_chapter'])
+    if d['start_verse'] != None: d['start_verse'] = int(d['start_verse'])
+    if d['end_chapter'] != None: d['end_chapter'] = int(d['end_chapter'])
+    if d['end_verse'] != None: d['end_verse'] = int(d['end_verse'])
+
+    try:
+        return Passage(**d)
+    except InvalidPassageException:
+        return ()
 
 
 if __name__ == "__main__":

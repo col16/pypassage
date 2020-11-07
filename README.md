@@ -26,6 +26,16 @@ Books may be specified as their full name (e.g. "Revelation"), a three-letter ab
 'Genesis-Revelation'
 ```
 
+### Parsing Strings
+If you have a simple string with a bible verse, calling `passages_from_string` will parse and
+return a Passage object
+
+```python
+>>> str(passages_from_string("Gen 2:4"))
+'Genesis 2:4'
+```
+
+
 ### Missing Information
 
 Not all fields need to be provided. You may for example specify a single verse, a single chapter, or even a complete book:
